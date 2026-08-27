@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.integrations.xhs import XHSNote, XHSProvider, XHSProviderError
 from app.schemas.attraction import (
+    AttractionCandidate as AttractionCandidateResponse,
     XHSAttractionRequest,
     XHSAttractionHistoryResponse,
     XHSAttractionResponse,
@@ -21,6 +22,12 @@ router = APIRouter(prefix="/api/xhs", tags=["xiaohongshu"])
 def _response(note: XHSNote) -> XHSNoteResponse:
     """将内部笔记对象映射为不依赖 Spider 响应格式的接口模型。"""
     return XHSNoteResponse(**note.as_dict())
+
+
+def _attraction_response(candidate: object) -> AttractionCandidateResponse:
+    """将领域景点模型转换为独立的 REST 响应模型。"""
+    payload = candidate.model_dump(mode="json") if hasattr(candidate, "model_dump") else candidate
+    return AttractionCandidateResponse.model_validate(payload)
 
 
 @router.get("/health")
@@ -84,7 +91,7 @@ def extract_xhs_attractions(request: XHSAttractionRequest) -> XHSAttractionRespo
             city=request.city,
             keywords=request.keywords,
             notes_count=extraction.notes_count,
-            attractions=extraction.attractions,
+            attractions=[_attraction_response(item) for item in extraction.attractions],
         )
     except AttractionExtractionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

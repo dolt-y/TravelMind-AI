@@ -2,7 +2,25 @@
 
 from pydantic import BaseModel, Field
 
-from app.models.poi import POI
+class POILocationResponse(BaseModel):
+    """REST 响应中的 POI 坐标。"""
+
+    longitude: float = Field(..., description="经度")
+    latitude: float = Field(..., description="纬度")
+
+
+class POIResponse(BaseModel):
+    """地图 POI 的 REST 响应模型。"""
+
+    id: str = Field(..., description="地图供应商 POI ID")
+    name: str = Field(..., description="POI 名称")
+    type: str = Field(default="", description="POI 类型")
+    address: str = Field(default="", description="POI 地址")
+    location: POILocationResponse = Field(..., description="POI 坐标")
+    tel: str | None = Field(default=None, description="联系电话")
+    city: str = Field(default="", description="所在城市")
+    rating: float | None = Field(default=None, description="评分")
+    photos: list[str] = Field(default_factory=list, description="图片地址")
 
 
 class POISearchRequest(BaseModel):
@@ -19,7 +37,7 @@ class POISearchResponse(BaseModel):
 
     success: bool
     message: str
-    data: list[POI] = Field(default_factory=list)
+    data: list[POIResponse] = Field(default_factory=list)
 
 
 class POIDetailResponse(BaseModel):
@@ -27,7 +45,7 @@ class POIDetailResponse(BaseModel):
 
     success: bool
     message: str
-    data: POI | None = None
+    data: POIResponse | None = None
 
 
 class POIPhotoResponse(BaseModel):

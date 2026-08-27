@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass
 from typing import Any
 
 from loguru import logger
@@ -11,7 +10,7 @@ from pydantic import ValidationError
 
 from app.integrations.xhs import XHSProvider, XHSProviderError
 from app.models.poi import POI
-from app.schemas.attraction import AttractionCandidate
+from app.models.xhs import AttractionCandidate, XHSExtraction
 from app.services.poi_service import POIService, POIServiceError
 from app.storage.poi_repository import POIRepositoryError
 from app.storage.xhs_repository import XHSRepository, XHSRepositoryError
@@ -21,15 +20,6 @@ from .llm_service import LLMService, LLMServiceError, parse_json_payload
 
 class AttractionExtractionError(RuntimeError):
     """景点候选提取失败。"""
-
-
-@dataclass(frozen=True)
-class AttractionExtractionResult:
-    """一次提取请求的候选结果和持久化记录信息。"""
-
-    attractions: list[AttractionCandidate]
-    notes_count: int
-    extraction_id: str
 
 
 def _duration(value: Any) -> int:
@@ -141,7 +131,7 @@ def _enrich_candidates_with_poi(
             continue
 
         names = {candidate.name.casefold(), candidate.name_zh.casefold(), candidate.name_en.casefold()}
-        # NOTE: 优先精确名称，避免同城搜索结果把候选景点替换成相近地点。
+        # 说明：优先精确名称，避免同城搜索结果把候选景点替换成相近地点。
         matched = next((poi for poi in pois if poi.name.casefold() in names), pois[0])
         matched_count += 1
         logger.info("POI 已匹配：{} -> {}", candidate.name, matched.name)
@@ -160,7 +150,7 @@ def _extract_attractions(
     llm: LLMService | None = None,
     repository: XHSRepository | None = None,
     poi_service: POIService | None = None,
-) -> AttractionExtractionResult:
+) -> XHSExtraction:
     """搜索旅行笔记、提取候选、补全 POI 信息并保存完整结果。
 
     只有笔记和候选成功写入仓储后，才会返回提取记录 ID。
@@ -181,7 +171,7 @@ def _extract_attractions(
     notes: list[dict[str, Any]] = []
     try:
         provider = provider or XHSProvider()
-        # NOTE: 搜索数量由 note_limit 控制，避免无界抓取增加风控和模型成本。
+        # 说明：搜索数量由 note_limit 控制，避免无界抓取增加风控和模型成本。
         logger.info("正在搜索小红书旅行笔记：{}", keyword)
         search_notes = provider.search_notes(keyword, limit=note_limit)
         logger.info("小红书搜索完成：获取 {} 条笔记", len(search_notes))
@@ -196,7 +186,7 @@ def _extract_attractions(
                         xsec_source=search_note.xsec_source,
                     )
                 except XHSProviderError:
-                    # WORKAROUND: 详情接口失败时使用搜索卡片正文，保留其他笔记的提取机会。
+                    # 兼容处理：详情接口失败时使用搜索卡片正文，保留其他笔记的提取机会。
                     logger.warning("笔记详情读取失败 [{}/{}]，使用搜索结果内容", index, len(search_notes))
                     note = search_note
             content = (note.content or search_note.content or "").strip()
@@ -262,10 +252,13 @@ def _extract_attractions(
         extraction_id,
         time.perf_counter() - started_at,
     )
-    return AttractionExtractionResult(
+    return XHSExtraction(
         attractions=result,
         notes_count=len(notes),
         extraction_id=extraction_id,
+        city=city,
+        keywords=keywords,
+        language=language,
     )
 
 
@@ -329,7 +322,7 @@ def extract_attractions_with_metadata(
     llm: LLMService | None = None,
     repository: XHSRepository | None = None,
     poi_service: POIService | None = None,
-) -> AttractionExtractionResult:
+) -> XHSExtraction:
     """返回候选列表、笔记数量和持久化记录 ID，供接口读取完整保存结果。"""
     return _extract_attractions(
         city,

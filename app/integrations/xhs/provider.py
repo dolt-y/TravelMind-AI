@@ -4,19 +4,20 @@ from __future__ import annotations
 import json
 import os
 import sys
-from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
 from dotenv import load_dotenv
 
+from app.models.xhs import XHSNote
+
 
 _VENDOR_ROOT = Path(__file__).resolve().parents[3] / "vendor" / "spider_xhs"
 _PROJECT_ROOT = _VENDOR_ROOT.parents[1]
 load_dotenv(_PROJECT_ROOT / ".env", override=False)
 if str(_VENDOR_ROOT) not in sys.path:
-    # NOTE: 上游客户端使用顶层 ``xhs_utils`` 导入，路径注入限制在适配层内。
+    # 说明：上游客户端使用顶层 ``xhs_utils`` 导入，路径注入限制在适配层内。
     sys.path.insert(0, str(_VENDOR_ROOT))
 
 from apis.xhs_pc_apis import XHS_Apis  # noqa: E402 - 注入路径后再导入上游客户端
@@ -25,26 +26,6 @@ from xhs_utils.xhs_pc import XHSPcAuth  # noqa: E402 - 注入路径后再导入�
 
 class XHSProviderError(RuntimeError):
     """可安全转换为接口错误响应的预期服务异常。"""
-
-
-@dataclass(frozen=True)
-class XHSNote:
-    """业务层使用的稳定笔记结构，隔离 Spider_XHS 的原始响应格式。"""
-
-    note_id: str
-    title: str = ""
-    content: str = ""
-    source_url: str = ""
-    # NOTE: xsec_token 是详情请求令牌，不等同于 Cookie，持久化层不保存。
-    xsec_token: str = ""
-    xsec_source: str = "pc_search"
-    images: list[str] = field(default_factory=list)
-    author: str = ""
-    liked_count: int = 0
-
-    def as_dict(self) -> dict[str, Any]:
-        """将笔记对象转换为接口和仓储层可消费的字典。"""
-        return asdict(self)
 
 
 def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) -> str:

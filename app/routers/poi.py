@@ -2,11 +2,17 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.schemas.poi import POIDetailResponse, POIPhotoResponse, POISearchResponse
+from app.schemas.poi import POIDetailResponse, POIPhotoResponse, POIResponse, POISearchResponse
 from app.services.poi_service import POIService, POIServiceError
 
 router = APIRouter(prefix="/api/poi", tags=["poi"])
 map_router = APIRouter(prefix="/api/map", tags=["poi"])
+
+
+def _poi_response(poi: object) -> POIResponse:
+    """将地图领域模型转换为独立的 REST 响应模型。"""
+    payload = poi.model_dump(mode="json") if hasattr(poi, "model_dump") else poi
+    return POIResponse.model_validate(payload)
 
 
 def _search_response(
@@ -21,7 +27,7 @@ def _search_response(
         return POISearchResponse(
             success=bool(pois),
             message="POI 搜索成功" if pois else "未获取到 POI 数据",
-            data=pois,
+            data=[_poi_response(poi) for poi in pois],
         )
     except POIServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -54,7 +60,7 @@ def get_poi_detail(poi_id: str) -> POIDetailResponse:
     """读取已保存的 POI 详情，未命中时请求高德并保存。"""
     try:
         poi = POIService().detail(poi_id)
-        return POIDetailResponse(success=True, message="获取 POI 详情成功", data=poi)
+        return POIDetailResponse(success=True, message="获取 POI 详情成功", data=_poi_response(poi))
     except POIServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

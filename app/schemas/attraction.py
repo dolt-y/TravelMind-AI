@@ -2,11 +2,15 @@
 
 from pydantic import BaseModel, Field
 
-from app.models.poi import POILocation
+class POILocationResponse(BaseModel):
+    """REST 响应中的经纬度坐标。"""
+
+    longitude: float = Field(..., description="经度")
+    latitude: float = Field(..., description="纬度")
 
 
 class AttractionCandidate(BaseModel):
-    """从旅行笔记中提取的景点候选。"""
+    """小红书景点候选的 REST 响应模型。"""
 
     name: str = Field(..., min_length=1, max_length=100, description="景点名称")
     name_zh: str = Field(..., min_length=1, max_length=100, description="中文名称")
@@ -17,7 +21,7 @@ class AttractionCandidate(BaseModel):
     reservation_tips: str = Field(default="", max_length=1000, description="预约提示")
     poi_id: str = Field(default="", max_length=100, description="地图供应商 POI ID")
     address: str = Field(default="", max_length=300, description="景点地址")
-    location: POILocation | None = Field(default=None, description="景点经纬度")
+    location: POILocationResponse | None = Field(default=None, description="景点经纬度")
     rating: float | None = Field(default=None, ge=0, description="地图供应商评分")
     photos: list[str] = Field(default_factory=list, description="景点图片地址")
 

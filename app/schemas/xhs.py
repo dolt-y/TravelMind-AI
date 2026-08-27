@@ -18,7 +18,6 @@ class XHSNoteResponse(BaseModel):
     title: str = Field(default="", description="笔记标题")
     content: str = Field(default="", description="笔记正文")
     source_url: str = Field(default="", description="笔记地址")
-    xsec_token: str = Field(default="", description="详情请求令牌")
     xsec_source: str = Field(default="pc_search", description="详情请求来源")
     images: list[str] = Field(default_factory=list, description="笔记图片地址")
     author: str = Field(default="", description="作者昵称")
