@@ -1,0 +1,19 @@
+[project]
+name = "travelmind-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "wen.yao", email = "2233296011@qq.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "curl-cffi>=0.15.0",
+    "fastapi>=0.141.1",
+    "httpx>=0.28.1",
+    "loguru>=0.7.0",
+    "openai>=1.109.0",
+    "pyexecjs>=1.5.1",
+    "python-dotenv>=1.1.0",
+    "uvicorn>=0.52.4",
+]
