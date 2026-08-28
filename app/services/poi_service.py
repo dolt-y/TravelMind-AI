@@ -99,7 +99,7 @@ class POIService:
                 logger.info("景点图片命中本地缓存：{}", name)
                 return cached
             logger.info("景点图片未命中缓存，正在搜索小红书：{}", name)
-            # NOTE: 小红书客户端是同步实现，放到线程中避免阻塞 FastAPI 事件循环。
+            # 说明：小红书客户端是同步实现，放到线程中避免阻塞 FastAPI 事件循环。
             photo_url = await asyncio.to_thread(_search_photo_from_xhs, name)
         except (XHSProviderError, POIRepositoryError) as exc:
             raise POIServiceError(str(exc)) from exc

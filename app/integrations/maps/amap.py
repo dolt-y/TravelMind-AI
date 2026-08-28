@@ -2,31 +2,17 @@
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
 from typing import Any
 
 import httpx
-from dotenv import load_dotenv
 
 from app.models.poi import POI, POILocation
 
-
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]
-load_dotenv(_PROJECT_ROOT / ".env", override=False)
+from .settings import amap_api_key
 
 
 class AmapPOIProviderError(RuntimeError):
     """高德 POI 配置、网络或响应异常。"""
-
-
-def _amap_key() -> str:
-    """按兼容顺序读取高德 Web 服务 Key。"""
-    return (
-        os.getenv("AMAP_API_KEY", "").strip()
-        or os.getenv("AMAP_MAPS_API_KEY", "").strip()
-        or os.getenv("VITE_AMAP_WEB_KEY", "").strip()
-    )
 
 
 def _location(value: str) -> POILocation | None:
@@ -76,7 +62,7 @@ class AmapPOIProvider:
 
     def __init__(self, api_key: str | None = None, timeout: float = 10):
         """初始化只使用显式 Key 的 HTTP 客户端，不继承系统代理。"""
-        self.api_key = (api_key or _amap_key()).strip()
+        self.api_key = (api_key or amap_api_key()).strip()
         if not self.api_key:
             raise AmapPOIProviderError(
                 "高德 API Key 未配置，请设置 AMAP_API_KEY 或 VITE_AMAP_WEB_KEY"

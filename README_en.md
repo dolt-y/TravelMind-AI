@@ -122,9 +122,13 @@ GET  /api/poi/search?keywords=Palace%20Museum&city=Beijing
 GET  /api/poi/detail/{poi_id}
 GET  /api/poi/photo?name=Palace%20Museum&city=Beijing
 GET  /api/map/poi?keywords=Palace%20Museum&city=Beijing
+GET  /api/weather?city=Beijing&start_date=2026-08-28&end_date=2026-08-30
 GET  /api/map/weather?city=Beijing
 POST /api/map/route
 ```
+
+Weather queries accept optional `start_date` and `end_date` parameters. Only dates covered by the
+provider are returned. Results are cached by provider, city and forecast date for three hours by default.
 
 ### Chat and preference memory
 
@@ -181,6 +185,7 @@ LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_ID=gpt-4o-mini
 LLM_TIMEOUT=60
 AMAP_API_KEY=replace_me
+WEATHER_CACHE_TTL_SECONDS=10800
 # TRAVELMIND_DATA_DIR=/absolute/path/travelmind-data
 ```
 

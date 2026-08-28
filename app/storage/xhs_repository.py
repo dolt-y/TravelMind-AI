@@ -116,7 +116,7 @@ class XHSRepository:
         try:
             with self._connect() as connection:
                 connection.executescript(schema)
-                # NOTE: 为已有数据库补充 POI 字段，保证历史提取记录仍可读取。
+                # 说明：为已有数据库补充 POI 字段，保证历史提取记录仍可读取。
                 columns = {
                     row[1] for row in connection.execute("PRAGMA table_info(attraction_candidates)")
                 }

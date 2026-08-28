@@ -191,12 +191,14 @@ GET  /api/poi/search?keywords=故宫&city=北京
 GET  /api/poi/detail/{poi_id}
 GET  /api/poi/photo?name=故宫&city=北京
 GET  /api/map/poi?keywords=故宫&city=北京
+GET  /api/weather?city=北京&start_date=2026-08-28&end_date=2026-08-30
 GET  /api/map/weather?city=北京
 POST /api/map/route
 ```
 
-POI 搜索、天气和路线返回地图服务的事实数据。景点图片接口按需从小红书查询首图，
-并缓存图片地址。
+天气接口支持可选的 `start_date` 和 `end_date`，只返回供应商有效预报范围内的数据；
+相同供应商、城市和日期的结果默认缓存三小时。POI 搜索、天气和路线返回地图服务的
+事实数据。景点图片接口按需从小红书查询首图，并缓存图片地址。
 
 ### 行程问答与偏好记忆
 
@@ -286,6 +288,9 @@ LLM_TIMEOUT=60
 
 # 高德 Web 服务 Key，用于后端 POI、天气和路线查询
 AMAP_API_KEY=replace_me
+
+# 天气缓存有效期，单位为秒
+WEATHER_CACHE_TTL_SECONDS=10800
 
 # SQLite 数据目录，可选
 # TRAVELMIND_DATA_DIR=/absolute/path/travelmind-data

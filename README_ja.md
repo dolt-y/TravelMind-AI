@@ -106,9 +106,13 @@ GET  /api/poi/search
 GET  /api/poi/detail/{poi_id}
 GET  /api/poi/photo
 GET  /api/map/poi
+GET  /api/weather?city=北京&start_date=2026-08-28&end_date=2026-08-30
 GET  /api/map/weather
 POST /api/map/route
 ```
+
+天気 API は任意の `start_date` と `end_date` を受け取り、プロバイダーが提供できる日付のみを
+返します。結果はプロバイダー、都市、予報日ごとに既定で 3 時間キャッシュされます。
 
 `POST /api/xhs/attractions` は次の処理を一つの業務入口として実行します。
 
@@ -170,6 +174,7 @@ LLM_API_KEY=replace_me
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_ID=gpt-4o-mini
 AMAP_API_KEY=replace_me
+WEATHER_CACHE_TTL_SECONDS=10800
 ```
 
 API ドキュメントは `http://127.0.0.1:8000/docs` で確認できます。詳細な実装作業、
