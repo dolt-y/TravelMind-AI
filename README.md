@@ -193,12 +193,15 @@ GET  /api/poi/photo?name=故宫&city=北京
 GET  /api/map/poi?keywords=故宫&city=北京
 GET  /api/weather?city=北京&start_date=2026-08-28&end_date=2026-08-30
 GET  /api/map/weather?city=北京
+GET  /api/hotels/search?city=北京&accommodation=经济型酒店&area=故宫附近
 POST /api/map/route
 ```
 
 天气接口支持可选的 `start_date` 和 `end_date`，只返回供应商有效预报范围内的数据；
-相同供应商、城市和日期的结果默认缓存三小时。POI 搜索、天气和路线返回地图服务的
-事实数据。景点图片接口按需从小红书查询首图，并缓存图片地址。
+相同供应商、城市和日期的天气结果默认缓存三小时。酒店搜索支持住宿偏好、每晚预算和
+景点区域，相同查询条件默认缓存二十四小时。POI、天气和酒店接口只返回地图服务的事实
+数据，缺失的酒店价格、评分或地址保留为空。景点图片接口按需从小红书查询首图，并缓存
+图片地址。
 
 ### 行程问答与偏好记忆
 

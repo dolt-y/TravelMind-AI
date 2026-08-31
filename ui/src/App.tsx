@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, SyntheticEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
+  ArrowLeft,
+  BedDouble,
   Bookmark,
   Clock3,
   Compass,
@@ -10,22 +13,44 @@ import {
   LoaderCircle,
   MapPin,
   RefreshCw,
+  RotateCcw,
   Search,
-  SlidersHorizontal,
   Sparkles,
   Star,
   TicketCheck,
+  Umbrella,
+  Wind,
 } from 'lucide-react'
-import { extractAttractions, getHealth } from './api'
-import type { Attraction, AttractionRequest, AttractionResponse, HealthResponse } from './types'
+import { extractAttractions, getHealth, getWeather, searchHotels } from './api'
+import i18n from './i18n'
+import type {
+  Attraction,
+  AttractionRequest,
+  AttractionResponse,
+  HealthResponse,
+  HotelSearchResponse,
+  WeatherResponse,
+} from './types'
+
+// 本地图集承担热门目的地和景点卡片的视觉占位，避免页面依赖外部图片 CDN。
+const travelImages = {
+  amalfiCoast: '/assets/travel/amalfi-coast.jpg',
+  amalfiArchitecture: '/assets/travel/amalfi-architecture.jpg',
+  kyoto: '/assets/travel/kyoto.jpg',
+  icelandAurora: '/assets/travel/iceland-aurora.jpg',
+  switzerlandLake: '/assets/travel/switzerland-lake.jpg',
+  norwayFjord: '/assets/travel/norway-fjord.jpg',
+  hotAirBalloon: '/assets/travel/hot-air-balloon.jpg',
+} as const
 
 const cityPresets = [
-  { name: '北京', keyword: '历史文化', image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=900&q=85' },
-  { name: '杭州', keyword: '自然人文', image: 'https://images.unsplash.com/photo-1599571234909-29ed5d1321d6?auto=format&fit=crop&w=900&q=85' },
-  { name: '成都', keyword: '美食漫游', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85' },
+  { name: '北京', nameKey: 'cities.beijing', keyword: '历史文化', keywordKey: 'cities.history', image: travelImages.amalfiArchitecture },
+  { name: '杭州', nameKey: 'cities.hangzhou', keyword: '自然人文', keywordKey: 'cities.nature', image: travelImages.switzerlandLake },
+  { name: '成都', nameKey: 'cities.chengdu', keyword: '美食漫游', keywordKey: 'cities.food', image: travelImages.kyoto },
+  { name: '冰岛', nameKey: 'cities.iceland', keyword: '自然风光', keywordKey: 'cities.scenery', image: travelImages.icelandAurora },
 ]
 
-const fallbackImages = cityPresets.map((city) => city.image)
+const fallbackImages = Object.values(travelImages)
 
 function formatDuration(minutes: number) {
   if (minutes < 60) return `${minutes} 分钟`
@@ -42,6 +67,7 @@ function handleImageError(event: SyntheticEvent<HTMLImageElement>, index = 0) {
 }
 
 function AttractionCard({ attraction, index }: { attraction: Attraction; index: number }) {
+  const { t } = useTranslation()
   const [saved, setSaved] = useState(false)
   const photo = attraction.photos[0] || fallbackImages[index % fallbackImages.length]
 
@@ -74,7 +100,7 @@ function AttractionCard({ attraction, index }: { attraction: Attraction; index: 
         <p className="reason">{attraction.reason}</p>
         <div className="card-meta">
           {attraction.address && <span><MapPin size={15} />{attraction.address}</span>}
-          {attraction.reservation_required && <span className="reservation"><TicketCheck size={15} />建议预约</span>}
+          {attraction.reservation_required && <span className="reservation"><TicketCheck size={15} />{t('data.reservation')}</span>}
         </div>
         {attraction.reservation_tips && <p className="reservation-tip">{attraction.reservation_tips}</p>}
       </div>
@@ -82,7 +108,176 @@ function AttractionCard({ attraction, index }: { attraction: Attraction; index: 
   )
 }
 
+function formatForecastDate(value: string) {
+  const date = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', weekday: 'short' }).format(date)
+}
+
+function WeatherPanel({ weather, loading }: { weather: WeatherResponse | null; loading: boolean }) {
+  const { t } = useTranslation()
+  const forecasts = weather?.data.slice(0, 3) ?? []
+
+  return (
+    <section className="insight-panel weather-panel" aria-labelledby="weather-heading">
+      <div className="insight-heading">
+        <div className="insight-icon weather-icon"><Umbrella size={18} /></div>
+        <div>
+          <p className="eyebrow">{t('data.source')}</p>
+          <h3 id="weather-heading">{t('data.weather')}</h3>
+        </div>
+        {weather?.cached && <span className="cache-label">{t('data.cached')}</span>}
+      </div>
+      {loading ? (
+        <div className="panel-loading"><LoaderCircle size={18} className="spinning" />{t('data.loadingWeather')}</div>
+      ) : forecasts.length > 0 ? (
+        <div className="forecast-list">
+          {forecasts.map((forecast) => (
+            <div className="forecast-row" key={`${forecast.city}-${forecast.date}`}>
+              <span className="forecast-date">{formatForecastDate(forecast.date)}</span>
+              <strong>{forecast.day_temperature === null ? '--' : `${Math.round(forecast.day_temperature)}°`}</strong>
+              <span>{forecast.day_weather || '天气待定'}</span>
+              <span className="forecast-wind"><Wind size={13} />{forecast.day_wind_power || '风力待定'}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="panel-empty">{t('data.emptyWeather')}</div>
+      )}
+    </section>
+  )
+}
+
+function HotelPanel({ hotels, loading }: { hotels: HotelSearchResponse | null; loading: boolean }) {
+  const { t } = useTranslation()
+  const items = hotels?.data.slice(0, 3) ?? []
+
+  return (
+    <section className="insight-panel hotel-panel" aria-labelledby="hotel-heading">
+      <div className="insight-heading">
+        <div className="insight-icon hotel-icon"><BedDouble size={18} /></div>
+        <div>
+          <p className="eyebrow">{t('data.source')}</p>
+          <h3 id="hotel-heading">{t('data.hotel')}</h3>
+        </div>
+        {hotels?.cached && <span className="cache-label">{t('data.cached')}</span>}
+      </div>
+      {loading ? (
+        <div className="panel-loading"><LoaderCircle size={18} className="spinning" />{t('data.loadingHotel')}</div>
+      ) : items.length > 0 ? (
+        <div className="hotel-list">
+          {items.map((hotel) => (
+            <div className="hotel-row" key={`${hotel.provider}-${hotel.id}`}>
+              <div className="hotel-thumb">
+                <img src={hotel.photos[0] || travelImages.amalfiCoast} alt="" onError={(event) => handleImageError(event, 0)} />
+              </div>
+              <div className="hotel-copy">
+                <strong>{hotel.name}</strong>
+                <span>{hotel.address || t('data.addressPending')}</span>
+              </div>
+              <div className="hotel-price">
+                {hotel.average_price === null ? '--' : `¥${Math.round(hotel.average_price)}`}
+                <small>{t('data.perNight')}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="panel-empty">{t('data.emptyHotel')}</div>
+      )}
+    </section>
+  )
+}
+
+function TripBuilder({
+  form,
+  updateForm,
+  onSubmit,
+  onBack,
+  loading,
+}: {
+  form: AttractionRequest
+  updateForm: (patch: Partial<AttractionRequest>) => void
+  onSubmit: (event: FormEvent) => void
+  onBack: () => void
+  loading: boolean
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <section className="builder-layout" aria-labelledby="builder-title">
+      <div className="builder-main">
+        <button className="back-link" type="button" onClick={onBack}><ArrowLeft size={15} />{t('create.back')}</button>
+        <p className="eyebrow">{t('create.eyebrow')}</p>
+        <h1 id="builder-title">{t('create.title')}</h1>
+        <p className="builder-copy">{t('create.copy')}</p>
+        <div className="trip-stepper" aria-label={t('create.title')}>
+          {[0, 1, 2].map((step) => (
+            <div className={`trip-step ${step === 0 ? 'is-active' : ''}`} key={step}>
+              <span>{step + 1}</span><strong>{t(`create.steps.${step}`)}</strong>
+            </div>
+          ))}
+        </div>
+        <form className="builder-form" onSubmit={onSubmit}>
+          <label className="builder-field">
+            <span>{t('create.destination')}</span>
+            <div className="builder-input"><MapPin size={17} /><input value={form.city} onChange={(event) => updateForm({ city: event.target.value })} placeholder={t('create.destinationPlaceholder')} autoComplete="off" /></div>
+          </label>
+          <label className="builder-field">
+            <span>{t('create.preference')}</span>
+            <div className="builder-input"><Search size={17} /><input value={form.keywords} onChange={(event) => updateForm({ keywords: event.target.value })} placeholder={t('create.preferencePlaceholder')} autoComplete="off" /></div>
+          </label>
+          <div className="builder-row">
+            <label className="builder-field">
+              <span>{t('create.source')}</span>
+              <div className="builder-range"><input type="range" min="1" max="10" value={form.note_limit} onChange={(event) => updateForm({ note_limit: Number(event.target.value) })} /><strong>{form.note_limit}</strong></div>
+            </label>
+            <label className="builder-field">
+              <span>{t('create.language')}</span>
+              <select value={form.language} onChange={(event) => { const language = event.target.value as AttractionRequest['language']; updateForm({ language }); void i18n.changeLanguage(language) }}>
+                <option value="zh">{t('language.zh')}</option><option value="en">{t('language.en')}</option><option value="ja">{t('language.ja')}</option>
+              </select>
+            </label>
+          </div>
+          <button className="builder-submit" type="submit" disabled={loading}><Sparkles size={17} />{loading ? t('hero.submitting') : t('create.submit')}<ArrowRight size={16} /></button>
+        </form>
+      </div>
+      <aside className="pipeline-panel">
+        <p className="eyebrow">{t('create.eyebrow')}</p>
+        <h2>{t('create.pipelineTitle')}</h2>
+        <p>{t('create.pipelineCopy')}</p>
+        <ol className="pipeline-list">
+          {[['sourceStep', Bookmark], ['llmStep', Sparkles], ['mapStep', MapPin], ['saveStep', ExternalLink]].map(([key, Icon]) => {
+            const PipelineIcon = Icon as typeof Bookmark
+            return <li key={String(key)}><span className="pipeline-icon"><PipelineIcon size={16} /></span><span>{t(`create.${String(key)}`)}</span><ArrowRight size={14} /></li>
+          })}
+        </ol>
+      </aside>
+    </section>
+  )
+}
+
+function LibraryPanel({ result, onStart, onOpen }: { result: AttractionResponse | null; onStart: () => void; onOpen: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <section className="library-page" id="library" aria-labelledby="library-title">
+      <p className="eyebrow">{t('library.eyebrow')}</p>
+      <h1 id="library-title">{t('library.title')}</h1>
+      {result ? (
+        <div className="library-record">
+          <div><span className="record-label">{t('library.latest')}</span><strong>{result.city}</strong><span>{t('result.notes', { count: result.notes_count })} · {t('result.places', { count: result.attractions.length })}</span></div>
+          <button className="secondary-button" type="button" onClick={onOpen}>{t('library.open')}<ArrowRight size={15} /></button>
+        </div>
+      ) : (
+        <div className="library-empty"><Bookmark size={28} /><h2>{t('library.empty')}</h2><p>{t('library.emptyCopy')}</p><button className="builder-submit compact" type="button" onClick={onStart}>{t('library.start')}<ArrowRight size={15} /></button></div>
+      )}
+    </section>
+  )
+}
+
 function App() {
+  const { t } = useTranslation()
+  const [view, setView] = useState<'home' | 'create' | 'results' | 'library'>('home')
   const [form, setForm] = useState<AttractionRequest>({
     city: '',
     keywords: '',
@@ -92,6 +287,9 @@ function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [healthLoading, setHealthLoading] = useState(true)
   const [result, setResult] = useState<AttractionResponse | null>(null)
+  const [weather, setWeather] = useState<WeatherResponse | null>(null)
+  const [hotels, setHotels] = useState<HotelSearchResponse | null>(null)
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -111,26 +309,43 @@ function App() {
   }, [])
 
   const status = useMemo(() => {
-    if (healthLoading) return { label: '检查中', tone: 'pending' }
-    if (!health) return { label: '服务未连接', tone: 'offline' }
-    if (!health.configured) return { label: '等待配置', tone: 'warning' }
-    return { label: '服务可用', tone: 'online' }
+    if (healthLoading) return { key: 'checking', tone: 'pending' }
+    if (!health) return { key: 'offline', tone: 'offline' }
+    if (!health.configured) return { key: 'waiting', tone: 'warning' }
+    return { key: 'online', tone: 'online' }
   }, [health, healthLoading])
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     if (!form.city.trim()) {
-      setError('请先填写目的地城市')
+      setError(t('error.missingCity'))
       return
     }
+    setView('results')
     setLoading(true)
     setError('')
+    setWeather(null)
+    setHotels(null)
     try {
-      setResult(await extractAttractions({ ...form, city: form.city.trim(), keywords: form.keywords.trim() }))
+      const extraction = await extractAttractions({ ...form, city: form.city.trim(), keywords: form.keywords.trim() })
+      setResult(extraction)
+      setLoading(false)
+      setEnrichmentLoading(true)
+      const [weatherResult, hotelResult] = await Promise.allSettled([
+        getWeather(extraction.city),
+        searchHotels(extraction.city),
+      ])
+      if (weatherResult.status === 'fulfilled') setWeather(weatherResult.value)
+      if (hotelResult.status === 'fulfilled') setHotels(hotelResult.value)
+      if (weatherResult.status === 'rejected' && hotelResult.status === 'rejected') {
+        setError(t('error.enrichFailed'))
+      }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : '景点提取失败，请稍后重试')
+      setError(requestError instanceof Error ? requestError.message : t('error.extractionFailed'))
+      setView('create')
     } finally {
       setLoading(false)
+      setEnrichmentLoading(false)
     }
   }
 
@@ -139,117 +354,130 @@ function App() {
     setError('')
   }
 
+  const resetSearch = () => {
+    setResult(null)
+    setWeather(null)
+    setHotels(null)
+    setError('')
+    setView('home')
+  }
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <a className="brand" href="#top" aria-label="TravelMind AI 首页">
-          <span className="brand-mark"><Compass size={22} /></span>
+    <div className="site-shell" id="top">
+      <header className="site-header">
+        <a className="site-brand" href="#top" aria-label={t('nav.homeAria')}>
+          <span className="site-brand-mark"><Compass size={18} /></span>
           <span>TravelMind <b>AI</b></span>
         </a>
-
-        <nav aria-label="主导航">
-          <a className="nav-item active" href="#discover"><Sparkles size={18} />灵感探索</a>
-          <a className="nav-item" href="#results"><Bookmark size={18} />本次结果</a>
+        <nav className="site-nav" aria-label={t('nav.mainAria')}>
+          <a className={`site-nav-link ${view === 'home' ? 'active' : ''}`} href="#discover" onClick={() => setView('home')}>{t('nav.explore')}</a>
+          <a className={`site-nav-link ${view === 'library' ? 'active' : ''}`} href="#library" onClick={() => setView('library')}>{t('nav.library')}</a>
+          <a className="site-nav-link" href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">{t('nav.api')}</a>
         </nav>
-
-        <div className="sidebar-status">
-          <div className="status-heading">
-            <span className={`status-dot ${status.tone}`} />
-            <span>{status.label}</span>
-            <button type="button" onClick={() => void refreshHealth()} title="刷新服务状态" aria-label="刷新服务状态">
-              <RefreshCw size={15} className={healthLoading ? 'spinning' : ''} />
-            </button>
-          </div>
-          <p>{health?.mode === 'pc-read-only' ? '小红书只读模式' : 'FastAPI · localhost:8000'}</p>
+        <div className="header-actions">
+          <span className={`service-status ${status.tone}`}><span className="status-dot" />{t(`status.${status.key}`)}</span>
+          <button className="header-cta" type="button" onClick={() => { setView('create'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{t('nav.start')}</button>
+          <button className="icon-button header-refresh" type="button" onClick={() => void refreshHealth()} title={t('status.refresh')} aria-label={t('status.refresh')}>
+            <RefreshCw size={16} className={healthLoading ? 'spinning' : ''} />
+          </button>
         </div>
-      </aside>
+      </header>
 
-      <main id="top">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">旅行灵感工作台</p>
-            <h1>下一站，去哪里？</h1>
-          </div>
-          <div className={`connection-pill ${status.tone}`}>
-            <span className="status-dot" />{status.label}
-          </div>
-        </header>
-
-        <section className="search-panel" id="discover">
-          <form onSubmit={(event) => void submit(event)}>
-            <div className="field destination-field">
-              <label htmlFor="city"><MapPin size={16} />目的地</label>
+      <main>
+        {view === 'home' && <>
+        <section className="hero-section" aria-labelledby="hero-title">
+          <img className="hero-image" src={travelImages.amalfiCoast} alt="海岸旅行风景" />
+          <div className="hero-overlay" />
+          <div className="hero-content">
+            <p className="hero-kicker">{t('hero.kicker')}</p>
+            <h1 id="hero-title">{t('hero.title')}</h1>
+            <p className="hero-copy">{t('hero.copy')}</p>
+            <form className="hero-search" id="discover" onSubmit={(event) => void submit(event)}>
+              <div className="hero-field">
+                <MapPin size={17} />
+                <label className="sr-only" htmlFor="city">{t('hero.cityLabel')}</label>
+                <input
+                  id="city"
+                  value={form.city}
+                  onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
+                  placeholder={t('hero.cityPlaceholder')}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="hero-field hero-keyword-field">
+                <Search size={17} />
+                <label className="sr-only" htmlFor="keywords">{t('hero.preferenceLabel')}</label>
+                <input
+                  id="keywords"
+                  value={form.keywords}
+                  onChange={(event) => setForm((current) => ({ ...current, keywords: event.target.value }))}
+                  placeholder={t('hero.preferencePlaceholder')}
+                  autoComplete="off"
+                />
+              </div>
+              <button className="hero-submit" type="submit" disabled={loading}>
+                {loading ? <LoaderCircle size={18} className="spinning" /> : <Sparkles size={18} />}
+                {loading ? t('hero.submitting') : t('hero.submit')}
+              </button>
+            </form>
+            <div className="hero-meta">
+              <span>{t('hero.notes', { count: form.note_limit })}</span>
               <input
-                id="city"
-                value={form.city}
-                onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
-                placeholder="城市，例如：北京"
-                autoComplete="off"
+                aria-label={t('hero.noteAria')}
+                type="range"
+                min="1"
+                max="10"
+                value={form.note_limit}
+                onChange={(event) => setForm((current) => ({ ...current, note_limit: Number(event.target.value) }))}
               />
-            </div>
-            <div className="field keyword-field">
-              <label htmlFor="keywords"><Search size={16} />旅行偏好</label>
-              <input
-                id="keywords"
-                value={form.keywords}
-                onChange={(event) => setForm((current) => ({ ...current, keywords: event.target.value }))}
-                placeholder="历史文化、美食、亲子…"
-                autoComplete="off"
-              />
-            </div>
-            <div className="field language-field">
-              <label htmlFor="language"><SlidersHorizontal size={16} />结果语言</label>
               <select
-                id="language"
+                aria-label={t('hero.languageAria')}
                 value={form.language}
-                onChange={(event) => setForm((current) => ({ ...current, language: event.target.value as AttractionRequest['language'] }))}
+                onChange={(event) => {
+                  const language = event.target.value as AttractionRequest['language']
+                  setForm((current) => ({ ...current, language }))
+                  void i18n.changeLanguage(language)
+                }}
               >
-                <option value="zh">中文</option>
-                <option value="en">English</option>
-                <option value="ja">日本語</option>
+                <option value="zh">{t('language.zh')}</option>
+                <option value="en">{t('language.en')}</option>
+                <option value="ja">{t('language.ja')}</option>
               </select>
             </div>
-            <button className="submit-button" type="submit" disabled={loading}>
-              {loading ? <LoaderCircle size={19} className="spinning" /> : <Sparkles size={19} />}
-              {loading ? '正在整理' : '生成灵感'}
-            </button>
-          </form>
-
-          <div className="search-options">
-            <label htmlFor="note-limit">参考游记 <strong>{form.note_limit} 篇</strong></label>
-            <input
-              id="note-limit"
-              type="range"
-              min="1"
-              max="10"
-              value={form.note_limit}
-              onChange={(event) => setForm((current) => ({ ...current, note_limit: Number(event.target.value) }))}
-            />
-            <span>内容越多，处理时间越长</span>
           </div>
         </section>
 
-        {error && <div className="error-banner" role="alert"><span>{error}</span><button type="button" onClick={() => setError('')}>关闭</button></div>}
+        <section className="feature-strip" aria-label={t('features.aria')}>
+          <div className="feature-item"><span className="feature-icon"><Sparkles size={17} /></span><span><strong>{t('features.plan')}</strong><small>{t('features.planSub')}</small></span></div>
+          <div className="feature-item"><span className="feature-icon"><Bookmark size={17} /></span><span><strong>{t('features.custom')}</strong><small>{t('features.customSub')}</small></span></div>
+          <div className="feature-item"><span className="feature-icon"><MapPin size={17} /></span><span><strong>{t('features.trusted')}</strong><small>{t('features.trustedSub')}</small></span></div>
+          <div className="feature-item"><span className="feature-icon"><ExternalLink size={17} /></span><span><strong>{t('features.start')}</strong><small>{t('features.startSub')}</small></span></div>
+        </section>
+        </>}
+
+        {view === 'create' && <TripBuilder form={form} updateForm={(patch) => setForm((current) => ({ ...current, ...patch }))} onSubmit={(event) => void submit(event)} onBack={() => setView('home')} loading={loading} />}
+
+        {error && <div className="error-banner" role="alert"><span>{error}</span><button type="button" onClick={() => setError('')}>{t('error.close')}</button></div>}
 
         {loading && (
           <section className="loading-state" aria-live="polite">
             <div className="loading-visual"><Compass size={34} /></div>
-            <div><h2>正在探索 {form.city}</h2><p>检索游记、整理推荐理由并匹配地点信息…</p></div>
+            <div><h2>{t('loading.title', { city: form.city })}</h2><p>{t('loading.copy')}</p></div>
           </section>
         )}
 
-        {!loading && !result && (
-          <section className="preset-section">
+        {view === 'home' && !loading && !result && (
+          <section className="preset-section" aria-labelledby="popular-heading">
             <div className="section-heading">
-              <div><p className="eyebrow">快速开始</p><h2>热门目的地</h2></div>
-              <p>选择一个城市，自动填入旅行主题</p>
+              <div><p className="eyebrow">{t('popular.eyebrow')}</p><h2 id="popular-heading">{t('popular.title')}</h2></div>
+              <p>{t('popular.copy')}</p>
             </div>
             <div className="preset-grid">
               {cityPresets.map((city) => (
                 <button className="preset-card" type="button" key={city.name} onClick={() => choosePreset(city.name, city.keyword)}>
                   <img src={city.image} alt={city.name} onError={handleImageError} />
                   <span className="preset-overlay">
-                    <span><strong>{city.name}</strong><small>{city.keyword}</small></span>
+                    <span><strong>{t(city.nameKey)}</strong><small>{t(city.keywordKey)}</small></span>
                     <span className="preset-arrow"><ArrowRight size={18} /></span>
                   </span>
                 </button>
@@ -258,17 +486,22 @@ function App() {
           </section>
         )}
 
-        {!loading && result && (
+        {view === 'results' && !loading && result && (
           <section className="results-section" id="results">
             <div className="results-heading">
               <div>
-                <p className="eyebrow">{result.city} · {result.notes_count} 篇游记</p>
-                <h2>{result.attractions.length} 个值得留意的地方</h2>
+                <p className="eyebrow">{result.city} · {t('result.notes', { count: result.notes_count })}</p>
+                <h2>{t('result.places', { count: result.attractions.length })}</h2>
               </div>
-              <div className="result-id" title={result.extraction_id}>
-                <span>记录已保存</span>
-                <code>{result.extraction_id.slice(0, 8)}</code>
+              <div className="result-actions">
+                <div className="result-id" title={result.extraction_id}><span>{t('result.saved')}</span><code>{result.extraction_id.slice(0, 8)}</code></div>
+                <button className="secondary-button" type="button" onClick={resetSearch}><RotateCcw size={15} />{t('result.retry')}</button>
               </div>
+            </div>
+
+            <div className="insight-grid">
+              <WeatherPanel weather={weather} loading={enrichmentLoading} />
+              <HotelPanel hotels={hotels} loading={enrichmentLoading} />
             </div>
 
             {result.attractions.length > 0 ? (
@@ -278,14 +511,16 @@ function App() {
                 ))}
               </div>
             ) : (
-              <div className="empty-results"><Search size={28} /><h3>没有找到合适的景点</h3><p>换一个旅行偏好后重新试试。</p></div>
+              <div className="empty-results"><Search size={28} /><h3>{t('result.noPlaces')}</h3><p>{t('result.noPlacesCopy')}</p></div>
             )}
           </section>
         )}
 
+        {view === 'library' && !loading && <LibraryPanel result={result} onStart={() => setView('create')} onOpen={() => setView('results')} />}
+
         <footer>
           <span>TravelMind AI</span>
-          <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">API 文档 <ExternalLink size={14} /></a>
+          <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">{t('footer.api')} <ExternalLink size={14} /></a>
         </footer>
       </main>
     </div>

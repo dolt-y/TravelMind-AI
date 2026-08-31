@@ -1,4 +1,10 @@
-import type { AttractionRequest, AttractionResponse, HealthResponse } from './types'
+import type {
+  AttractionRequest,
+  AttractionResponse,
+  HealthResponse,
+  HotelSearchResponse,
+  WeatherResponse,
+} from './types'
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (response.ok) {
@@ -28,4 +34,14 @@ export async function extractAttractions(
     body: JSON.stringify(request),
   })
   return parseResponse<AttractionResponse>(response)
+}
+
+export async function getWeather(city: string): Promise<WeatherResponse> {
+  const params = new URLSearchParams({ city })
+  return parseResponse<WeatherResponse>(await fetch(`/api/weather?${params.toString()}`))
+}
+
+export async function searchHotels(city: string): Promise<HotelSearchResponse> {
+  const params = new URLSearchParams({ city, limit: '6' })
+  return parseResponse<HotelSearchResponse>(await fetch(`/api/hotels/search?${params.toString()}`))
 }
