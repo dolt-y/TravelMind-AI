@@ -109,6 +109,23 @@ POST /api/xhs/attractions
 GET  /api/xhs/attractions/{extraction_id}
 ```
 
+The Web client also supports the three Spider_XHS PC login methods:
+
+```text
+GET  /api/xhs/login/methods
+POST /api/xhs/login/qrcode/start
+GET  /api/xhs/login/{login_id}/qrcode
+GET  /api/xhs/login/{login_id}/status
+POST /api/xhs/login/phone/start
+POST /api/xhs/login/phone/verify
+POST /api/xhs/login/cookie
+```
+
+QR-code and phone login use a short-lived asynchronous task. The browser polls the status with
+`login_id`; after success the session is kept only in the current service process and is never
+returned to the browser, logged or persisted. A Cookie in `TRAVELMIND_XHS_COOKIE` is optional and
+is used after a service restart when no Web login session exists.
+
 `POST /api/xhs/attractions` is the attraction data entry point:
 
 ```text
@@ -183,7 +200,8 @@ TRAVELMIND_XHS_COOKIE=replace_me
 LLM_API_KEY=replace_me
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_ID=gpt-4o-mini
-LLM_TIMEOUT=60
+LLM_TIMEOUT=180
+LLM_ENABLE_THINKING=false
 AMAP_API_KEY=replace_me
 WEATHER_CACHE_TTL_SECONDS=10800
 # TRAVELMIND_DATA_DIR=/absolute/path/travelmind-data
@@ -195,7 +213,14 @@ frontend JavaScript key and must not be mixed.
 
 ## Local development
 
-Requirements: Python 3.12+, Node.js 20 and `uv`.
+Requirements: Python 3.12+, Node.js 20 and `uv`. The Xiaohongshu PC signing runtime also needs
+its local Node dependency:
+
+```bash
+cd vendor/spider_xhs
+npm install
+cd ../..
+```
 
 ```bash
 uv sync

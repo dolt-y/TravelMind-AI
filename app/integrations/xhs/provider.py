@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from threading import Lock
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -21,7 +22,32 @@ if str(_VENDOR_ROOT) not in sys.path:
     sys.path.insert(0, str(_VENDOR_ROOT))
 
 from apis.xhs_pc_apis import XHS_Apis  # noqa: E402 - 注入路径后再导入上游客户端
+from apis.xhs_pc_login_apis import XHSLoginApi  # noqa: E402 - 统一由适配层加载登录客户端
 from xhs_utils.xhs_pc import XHSPcAuth  # noqa: E402 - 注入路径后再导入上游鉴权类
+
+
+_RUNTIME_COOKIE = ""
+_RUNTIME_COOKIE_LOCK = Lock()
+
+
+def set_runtime_cookie(cookie: str) -> None:
+    """保存当前进程使用的登录会话，供 Web 登录成功后的后续请求复用。"""
+    global _RUNTIME_COOKIE
+    with _RUNTIME_COOKIE_LOCK:
+        _RUNTIME_COOKIE = normalize_cookie(cookie)
+
+
+def clear_runtime_cookie() -> None:
+    """清除 Web 登录产生的进程内会话，不影响 .env 配置。"""
+    global _RUNTIME_COOKIE
+    with _RUNTIME_COOKIE_LOCK:
+        _RUNTIME_COOKIE = ""
+
+
+def runtime_cookie() -> str:
+    """读取当前进程会话，供健康检查和 Provider 初始化使用。"""
+    with _RUNTIME_COOKIE_LOCK:
+        return _RUNTIME_COOKIE
 
 
 class XHSProviderError(RuntimeError):
@@ -55,8 +81,8 @@ def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) 
 
 
 def cookie_from_environment() -> str:
-    """按优先级读取 TravelMind Cookie 配置，并兼容 Spider_XHS 旧变量名。"""
-    return normalize_cookie(
+    """优先读取 Web 登录会话，否则读取环境变量中的 Cookie。"""
+    return runtime_cookie() or normalize_cookie(
         os.getenv("TRAVELMIND_XHS_COOKIE") or os.getenv("XHS_COOKIE") or os.getenv("COOKIES")
     )
 

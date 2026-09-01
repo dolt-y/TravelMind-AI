@@ -8,11 +8,13 @@ from app.routers.poi import router as poi_router
 from app.routers.weather import map_router as map_weather_router
 from app.routers.weather import router as weather_router
 from app.routers.xhs import router as xhs_router
+from app.routers.xhs_login import router as xhs_login_router
 
 # 说明：API 应用只负责组装路由，具体业务由 integrations、services 和 storage 模块负责。
 app = FastAPI(title="TravelMind-AI API")
 
 app.include_router(xhs_router)
+app.include_router(xhs_login_router)
 app.include_router(poi_router)
 app.include_router(map_poi_router)
 app.include_router(weather_router)

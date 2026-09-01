@@ -111,6 +111,12 @@ GET  /api/map/weather
 POST /api/map/route
 ```
 
+Web 画面では、Spider_XHS PC の Cookie、QR コード、携帯電話番号の SMS 認証という三つの
+ログイン方法を利用できます。QR コードと SMS 認証は短時間の非同期タスクとして実行され、
+ブラウザは `login_id` で状態をポーリングします。成功したセッションは現在のサービス
+プロセス内だけで保持され、ブラウザへの返却、ログ出力、永続化は行いません。
+`TRAVELMIND_XHS_COOKIE` は任意の設定で、サービス再起動後に Web ログインの代わりに使用できます。
+
 天気 API は任意の `start_date` と `end_date` を受け取り、プロバイダーが提供できる日付のみを
 返します。結果はプロバイダー、都市、予報日ごとに既定で 3 時間キャッシュされます。
 
@@ -168,11 +174,21 @@ cp .env.example .env
 uv run uvicorn main:app --reload
 ```
 
+小紅書 PC 署名ランタイムの Node 依存関係もインストールしてください。
+
+```bash
+cd vendor/spider_xhs
+npm install
+cd ../..
+```
+
 ```dotenv
 TRAVELMIND_XHS_COOKIE=replace_me
 LLM_API_KEY=replace_me
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_ID=gpt-4o-mini
+LLM_TIMEOUT=180
+LLM_ENABLE_THINKING=false
 AMAP_API_KEY=replace_me
 WEATHER_CACHE_TTL_SECONDS=10800
 ```

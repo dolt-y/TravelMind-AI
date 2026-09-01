@@ -99,3 +99,23 @@ export interface AttractionRequest {
   language: 'zh' | 'en' | 'ja'
   note_limit: number
 }
+
+export type XHSLoginMethod = 'cookie' | 'qrcode' | 'phone'
+export type XHSLoginState = 'preparing' | 'waiting_scan' | 'waiting_confirm' | 'code_sent' | 'authenticating' | 'success' | 'expired' | 'error'
+
+export interface XHSLoginStartResponse {
+  login_id: string
+  method: XHSLoginMethod
+  state: XHSLoginState
+  message: string
+  expires_in: number
+}
+
+export interface XHSLoginStatusResponse {
+  login_id: string
+  method: XHSLoginMethod
+  state: XHSLoginState
+  message: string
+  qr_url: string | null
+  user_nickname: string | null
+}

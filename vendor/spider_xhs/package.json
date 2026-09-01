@@ -1,0 +1,9 @@
+{
+  "name": "travelmind-spider-xhs-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TravelMind-AI 内置 Spider_XHS PC 签名运行时依赖",
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  }
+}

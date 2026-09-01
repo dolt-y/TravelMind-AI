@@ -218,6 +218,8 @@ def _extract_attractions(
         logger.info("正在调用大模型提取结构化景点")
         raw_items = parse_json_payload(llm.complete(_prompt(city, keywords, language, notes)))
     except LLMServiceError as exc:
+        # 解析失败只记录错误类型，不记录笔记正文或模型完整响应。
+        logger.error("大模型景点提取失败，错误类型：{}", type(exc).__name__)
         raise AttractionExtractionError(str(exc)) from exc
 
     result: list[AttractionCandidate] = []

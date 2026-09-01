@@ -165,6 +165,15 @@ POST /api/xhs/search
 GET  /api/xhs/notes/{note_id}
 POST /api/xhs/attractions
 GET  /api/xhs/attractions/{extraction_id}
+
+# 小红书 PC 登录
+GET  /api/xhs/login/methods
+POST /api/xhs/login/qrcode/start
+GET  /api/xhs/login/{login_id}/qrcode
+GET  /api/xhs/login/{login_id}/status
+POST /api/xhs/login/phone/start
+POST /api/xhs/login/phone/verify
+POST /api/xhs/login/cookie
 ```
 
 其中 `POST /api/xhs/attractions` 是景点资料处理入口：
@@ -172,6 +181,10 @@ GET  /api/xhs/attractions/{extraction_id}
 ```text
 小红书搜索 -> 笔记详情 -> LLM 提取 -> POI 匹配 -> SQLite 保存
 ```
+
+小红书登录页面支持 Cookie、二维码和手机号验证码三种 PC 登录方式。二维码和手机号登录会创建
+短时异步任务，页面通过 `login_id` 轮询状态；登录成功后会话只保存在当前服务进程内，不返回或打印完整 Cookie。
+服务重启后如需继续使用已有会话，可以在 `.env` 配置 `TRAVELMIND_XHS_COOKIE`。
 
 请求示例：
 
@@ -280,14 +293,15 @@ cp .env.example .env
 ```
 
 ```dotenv
-# 小红书网页端登录 Cookie，仅用于服务进程内的上游请求
+# 可选：小红书网页端登录 Cookie；也可以通过 Web 登录页面建立当前运行会话
 TRAVELMIND_XHS_COOKIE=replace_me
 
 # OpenAI-compatible LLM
 LLM_API_KEY=replace_me
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_ID=gpt-4o-mini
-LLM_TIMEOUT=60
+LLM_TIMEOUT=180
+LLM_ENABLE_THINKING=false
 
 # 高德 Web 服务 Key，用于后端 POI、天气和路线查询
 AMAP_API_KEY=replace_me
@@ -309,7 +323,14 @@ WEATHER_CACHE_TTL_SECONDS=10800
 
 ## 本地运行
 
-环境要求：Python 3.12 或更高版本、Node.js 20、`uv`。
+环境要求：Python 3.12 或更高版本、Node.js 20、`uv`。小红书 PC 签名运行时还需要安装
+`vendor/spider_xhs` 下的 Node 依赖：
+
+```bash
+cd vendor/spider_xhs
+npm install
+cd ../..
+```
 
 ```bash
 uv sync

@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowLeft,
   BedDouble,
+  Bell,
   Bookmark,
   Clock3,
   Compass,
@@ -15,6 +16,7 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  Settings,
   Sparkles,
   Star,
   TicketCheck,
@@ -23,6 +25,8 @@ import {
 } from 'lucide-react'
 import { extractAttractions, getHealth, getWeather, searchHotels } from './api'
 import i18n from './i18n'
+import { PrototypeWorkspace } from './prototype'
+import type { AppScreen } from './prototype'
 import type {
   Attraction,
   AttractionRequest,
@@ -66,13 +70,13 @@ function handleImageError(event: SyntheticEvent<HTMLImageElement>, index = 0) {
   image.src = fallbackImages[index % fallbackImages.length]
 }
 
-function AttractionCard({ attraction, index }: { attraction: Attraction; index: number }) {
+function AttractionCard({ attraction, index, onOpen }: { attraction: Attraction; index: number; onOpen?: () => void }) {
   const { t } = useTranslation()
   const [saved, setSaved] = useState(false)
   const photo = attraction.photos[0] || fallbackImages[index % fallbackImages.length]
 
   return (
-    <article className="attraction-card">
+    <article className="attraction-card" role={onOpen ? 'button' : undefined} tabIndex={onOpen ? 0 : undefined} onClick={onOpen} onKeyDown={(event) => { if (onOpen && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onOpen() } }}>
       <div className="card-media">
         <img src={photo} alt={attraction.name_zh || attraction.name} onError={(event) => handleImageError(event, index)} />
         <button
@@ -81,7 +85,7 @@ function AttractionCard({ attraction, index }: { attraction: Attraction; index: 
           title={saved ? '取消收藏' : '收藏景点'}
           aria-label={saved ? '取消收藏' : '收藏景点'}
           aria-pressed={saved}
-          onClick={() => setSaved((current) => !current)}
+          onClick={(event) => { event.stopPropagation(); setSaved((current) => !current) }}
         >
           <Heart size={18} fill={saved ? 'currentColor' : 'none'} />
         </button>
@@ -275,9 +279,34 @@ function LibraryPanel({ result, onStart, onOpen }: { result: AttractionResponse 
   )
 }
 
+// 后端不可用时提供本地演示结果，保证前端流程仍可继续体验。
+function createPrototypeResult(city: string, keywords: string): AttractionResponse {
+  const names = ['城市历史中心', '当地代表性景点', '热门自然景观']
+  return {
+    extraction_id: `prototype-${Date.now()}`,
+    city,
+    keywords,
+    notes_count: 4,
+    attractions: names.map((name, index) => ({
+      name,
+      name_zh: name,
+      name_en: `Local place ${index + 1}`,
+      reason: '本地原型数据：用于演示景点详情、收藏和行程编辑等交互。',
+      duration: 120 + index * 30,
+      reservation_required: index === 1,
+      reservation_tips: index === 1 ? '建议提前预约' : '',
+      poi_id: `prototype-poi-${index}`,
+      address: '目的地热门区域',
+      location: null,
+      rating: 4.6 + index * 0.1,
+      photos: [travelImages[(['amalfiCoast', 'amalfiArchitecture', 'kyoto'] as const)[index]]],
+    })),
+  }
+}
+
 function App() {
   const { t } = useTranslation()
-  const [view, setView] = useState<'home' | 'create' | 'results' | 'library'>('home')
+  const [view, setView] = useState<AppScreen>('home')
   const [form, setForm] = useState<AttractionRequest>({
     city: '',
     keywords: '',
@@ -321,7 +350,7 @@ function App() {
       setError(t('error.missingCity'))
       return
     }
-    setView('results')
+    setView('generating')
     setLoading(true)
     setError('')
     setWeather(null)
@@ -329,6 +358,7 @@ function App() {
     try {
       const extraction = await extractAttractions({ ...form, city: form.city.trim(), keywords: form.keywords.trim() })
       setResult(extraction)
+      setView('result')
       setLoading(false)
       setEnrichmentLoading(true)
       const [weatherResult, hotelResult] = await Promise.allSettled([
@@ -340,9 +370,10 @@ function App() {
       if (weatherResult.status === 'rejected' && hotelResult.status === 'rejected') {
         setError(t('error.enrichFailed'))
       }
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('error.extractionFailed'))
-      setView('create')
+    } catch {
+      setResult(createPrototypeResult(form.city.trim(), form.keywords.trim()))
+      setError('接口暂不可用，已切换到本地原型数据')
+      setView('result')
     } finally {
       setLoading(false)
       setEnrichmentLoading(false)
@@ -370,13 +401,17 @@ function App() {
           <span>TravelMind <b>AI</b></span>
         </a>
         <nav className="site-nav" aria-label={t('nav.mainAria')}>
-          <a className={`site-nav-link ${view === 'home' ? 'active' : ''}`} href="#discover" onClick={() => setView('home')}>{t('nav.explore')}</a>
+          <a className={`site-nav-link ${view === 'home' || view === 'inspiration' ? 'active' : ''}`} href="#discover" onClick={() => setView('home')}>{t('nav.explore')}</a>
           <a className={`site-nav-link ${view === 'library' ? 'active' : ''}`} href="#library" onClick={() => setView('library')}>{t('nav.library')}</a>
           <a className="site-nav-link" href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">{t('nav.api')}</a>
         </nav>
         <div className="header-actions">
           <span className={`service-status ${status.tone}`}><span className="status-dot" />{t(`status.${status.key}`)}</span>
           <button className="header-cta" type="button" onClick={() => { setView('create'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{t('nav.start')}</button>
+          <button className="icon-button" type="button" onClick={() => setView('search')} title="搜索" aria-label="搜索"><Search size={16} /></button>
+          <button className="icon-button" type="button" onClick={() => setView('favorites')} title="收藏" aria-label="收藏"><Heart size={16} /></button>
+          <button className="icon-button" type="button" onClick={() => setView('notifications')} title="通知" aria-label="通知"><Bell size={16} /></button>
+          <button className="icon-button" type="button" onClick={() => setView('settings')} title="设置" aria-label="设置"><Settings size={16} /></button>
           <button className="icon-button header-refresh" type="button" onClick={() => void refreshHealth()} title={t('status.refresh')} aria-label={t('status.refresh')}>
             <RefreshCw size={16} className={healthLoading ? 'spinning' : ''} />
           </button>
@@ -448,10 +483,10 @@ function App() {
         </section>
 
         <section className="feature-strip" aria-label={t('features.aria')}>
-          <div className="feature-item"><span className="feature-icon"><Sparkles size={17} /></span><span><strong>{t('features.plan')}</strong><small>{t('features.planSub')}</small></span></div>
-          <div className="feature-item"><span className="feature-icon"><Bookmark size={17} /></span><span><strong>{t('features.custom')}</strong><small>{t('features.customSub')}</small></span></div>
-          <div className="feature-item"><span className="feature-icon"><MapPin size={17} /></span><span><strong>{t('features.trusted')}</strong><small>{t('features.trustedSub')}</small></span></div>
-          <div className="feature-item"><span className="feature-icon"><ExternalLink size={17} /></span><span><strong>{t('features.start')}</strong><small>{t('features.startSub')}</small></span></div>
+          <button className="feature-item" type="button" onClick={() => setView('create')}><span className="feature-icon"><Sparkles size={17} /></span><span><strong>{t('features.plan')}</strong><small>{t('features.planSub')}</small></span></button>
+          <button className="feature-item" type="button" onClick={() => setView('settings')}><span className="feature-icon"><Bookmark size={17} /></span><span><strong>{t('features.custom')}</strong><small>{t('features.customSub')}</small></span></button>
+          <button className="feature-item" type="button" onClick={() => setView('map')}><span className="feature-icon"><MapPin size={17} /></span><span><strong>{t('features.trusted')}</strong><small>{t('features.trustedSub')}</small></span></button>
+          <button className="feature-item" type="button" onClick={() => setView('mobile')}><span className="feature-icon"><ExternalLink size={17} /></span><span><strong>{t('features.start')}</strong><small>{t('features.startSub')}</small></span></button>
         </section>
         </>}
 
@@ -459,7 +494,7 @@ function App() {
 
         {error && <div className="error-banner" role="alert"><span>{error}</span><button type="button" onClick={() => setError('')}>{t('error.close')}</button></div>}
 
-        {loading && (
+        {loading && view !== 'generating' && (
           <section className="loading-state" aria-live="polite">
             <div className="loading-visual"><Compass size={34} /></div>
             <div><h2>{t('loading.title', { city: form.city })}</h2><p>{t('loading.copy')}</p></div>
@@ -486,7 +521,7 @@ function App() {
           </section>
         )}
 
-        {view === 'results' && !loading && result && (
+        {view === 'result' && !loading && result && (
           <section className="results-section" id="results">
             <div className="results-heading">
               <div>
@@ -495,6 +530,11 @@ function App() {
               </div>
               <div className="result-actions">
                 <div className="result-id" title={result.extraction_id}><span>{t('result.saved')}</span><code>{result.extraction_id.slice(0, 8)}</code></div>
+                <button className="secondary-button" type="button" onClick={() => setView('overview')}>行程总览</button>
+                <button className="secondary-button" type="button" onClick={() => setView('map')}>地图路线</button>
+                <button className="secondary-button" type="button" onClick={() => setView('edit')}>编辑</button>
+                <button className="secondary-button" type="button" onClick={() => setView('share')}>分享</button>
+                <button className="secondary-button" type="button" onClick={() => setView('export')}>导出</button>
                 <button className="secondary-button" type="button" onClick={resetSearch}><RotateCcw size={15} />{t('result.retry')}</button>
               </div>
             </div>
@@ -507,7 +547,7 @@ function App() {
             {result.attractions.length > 0 ? (
               <div className="attraction-grid">
                 {result.attractions.map((attraction, index) => (
-                  <AttractionCard key={`${attraction.poi_id || attraction.name}-${index}`} attraction={attraction} index={index} />
+                  <AttractionCard key={`${attraction.poi_id || attraction.name}-${index}`} attraction={attraction} index={index} onOpen={() => setView('detail')} />
                 ))}
               </div>
             ) : (
@@ -516,7 +556,11 @@ function App() {
           </section>
         )}
 
-        {view === 'library' && !loading && <LibraryPanel result={result} onStart={() => setView('create')} onOpen={() => setView('results')} />}
+        {view === 'library' && !loading && <LibraryPanel result={result} onStart={() => setView('create')} onOpen={() => setView('result')} />}
+
+        {view !== 'home' && view !== 'create' && view !== 'result' && view !== 'library' && (
+          <PrototypeWorkspace screen={view} result={result} onNavigate={setView} />
+        )}
 
         <footer>
           <span>TravelMind AI</span>

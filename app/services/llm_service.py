@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
 
 import httpx
+from loguru import logger
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -44,11 +46,15 @@ class LLMService:
             or "https://api.openai.com/v1"
         ).rstrip("/")
         self.model = _first_environment("LLM_MODEL_ID", "OPENAI_MODEL") or "gpt-4o-mini"
-        timeout = _first_environment("LLM_TIMEOUT") or "60"
+        timeout = _first_environment("LLM_TIMEOUT") or "180"
         try:
             timeout_seconds = max(1, int(timeout))
         except ValueError as exc:
             raise LLMServiceError("LLM_TIMEOUT 必须是正整数") from exc
+        thinking = (_first_environment("LLM_ENABLE_THINKING") or "false").lower()
+        if thinking not in {"true", "false"}:
+            raise LLMServiceError("LLM_ENABLE_THINKING 只能设置为 true 或 false")
+        self.enable_thinking = thinking == "true"
         self._client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
@@ -58,6 +64,11 @@ class LLMService:
 
     def complete(self, prompt: str) -> str:
         """提交景点提取提示词并返回模型文本，不记录密钥或原始请求头。"""
+        started_at = time.perf_counter()
+        request_options: dict[str, Any] = {}
+        if "dashscope.aliyuncs.com" in self.base_url:
+            # 景点结构化提取更重视 JSON 稳定性，默认关闭百炼模型的深度思考，避免超时。
+            request_options["extra_body"] = {"enable_thinking": self.enable_thinking}
         try:
             response = self._client.chat.completions.create(
                 model=self.model,
@@ -69,12 +80,31 @@ class LLMService:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
+                **request_options,
             )
             content = response.choices[0].message.content or ""
         except Exception as exc:
+            # 只记录可用于定位的元数据，避免密钥、Prompt 和响应正文进入日志。
+            logger.error(
+                "LLM 请求失败：模型={}，HTTP状态={}，异常类型={}，耗时={:.2f}s",
+                self.model,
+                getattr(exc, "status_code", None) or "未知",
+                type(exc).__name__,
+                time.perf_counter() - started_at,
+            )
             raise LLMServiceError("LLM 请求失败，请检查服务地址、模型和网络配置") from exc
         if not content.strip():
+            logger.error(
+                "LLM 返回内容为空：模型={}，耗时={:.2f}s",
+                self.model,
+                time.perf_counter() - started_at,
+            )
             raise LLMServiceError("LLM 返回内容为空")
+        logger.info(
+            "LLM 请求完成：模型={}，耗时={:.2f}s",
+            self.model,
+            time.perf_counter() - started_at,
+        )
         return content
 
 
