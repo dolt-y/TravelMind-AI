@@ -26,12 +26,6 @@ export interface AttractionResponse {
   attractions: Attraction[]
 }
 
-export interface HealthResponse {
-  configured: boolean
-  vendor_present: boolean
-  mode: string
-}
-
 export interface WeatherForecast {
   provider: string
   city: string

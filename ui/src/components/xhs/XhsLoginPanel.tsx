@@ -9,7 +9,6 @@ import {
   startXhsQrLogin,
   verifyXhsPhoneLogin,
 } from '../../services/xhsLogin'
-import { useAppStore } from '../../stores/appStore'
 import type { XHSLoginMethod, XHSLoginStatusResponse } from '../../types'
 
 const terminalStates = new Set(['success', 'expired', 'error'])
@@ -23,7 +22,6 @@ export function XhsLoginPanel() {
   const [cookie, setCookie] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const refreshHealth = useAppStore((state) => state.refreshHealth)
 
   useEffect(() => {
     if (!task?.login_id || terminalStates.has(task.state)) return
@@ -32,7 +30,6 @@ export function XhsLoginPanel() {
       void getXhsLoginStatus(task.login_id)
         .then((status) => {
           setTask(status)
-          if (status.state === 'success') void refreshHealth()
         })
         .catch((pollError: unknown) => {
           setError(pollError instanceof Error ? pollError.message : t('login.error'))
@@ -40,7 +37,7 @@ export function XhsLoginPanel() {
     }, 1_500)
 
     return () => window.clearInterval(poll)
-  }, [refreshHealth, task?.login_id, task?.state, t])
+  }, [task?.login_id, task?.state, t])
 
   function reset(nextMethod: XHSLoginMethod) {
     setMethod(nextMethod)
@@ -96,7 +93,6 @@ export function XhsLoginPanel() {
       const response = await loginWithXhsCookie(cookie.trim())
       setTask({ ...response, qr_url: null, user_nickname: null })
       setCookie('')
-      if (response.state === 'success') void refreshHealth()
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : t('login.error'))
     } finally {

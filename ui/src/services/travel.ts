@@ -1,16 +1,10 @@
 import type {
   AttractionRequest,
   AttractionResponse,
-  HealthResponse,
   HotelSearchResponse,
   WeatherResponse,
 } from '../types'
 import { http } from './http'
-
-export async function getHealth(): Promise<HealthResponse> {
-  const { data } = await http.get<HealthResponse>('/xhs/health')
-  return data
-}
 
 export async function extractAttractions(request: AttractionRequest): Promise<AttractionResponse> {
   const { data } = await http.post<AttractionResponse>('/xhs/attractions', request)

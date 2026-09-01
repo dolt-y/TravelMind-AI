@@ -32,17 +32,19 @@ export function PlannerForm({ mode = 'full', onSubmit }: PlannerFormProps) {
           />
         </div>
       </label>
-      <label className="field field--preferences">
-        <span>{t('planner.preferences')}</span>
-        <div className="field__control">
-          <Sparkles size={18} aria-hidden="true" />
-          <input
-            value={draft.keywords}
-            onChange={(event) => updateDraft({ keywords: event.target.value })}
-            placeholder={t('planner.preferencesPlaceholder')}
-          />
-        </div>
-      </label>
+      {mode === 'full' && (
+        <label className="field field--preferences">
+          <span>{t('planner.preferences')}</span>
+          <div className="field__control">
+            <Sparkles size={18} aria-hidden="true" />
+            <input
+              value={draft.keywords}
+              onChange={(event) => updateDraft({ keywords: event.target.value })}
+              placeholder={t('planner.preferencesPlaceholder')}
+            />
+          </div>
+        </label>
+      )}
       {mode === 'full' && (
         <>
           <label className="field">
@@ -70,7 +72,7 @@ export function PlannerForm({ mode = 'full', onSubmit }: PlannerFormProps) {
         </>
       )}
       <button className="button button--accent planner-form__submit" type="submit">
-        {t('planner.submit')}
+        {t(mode === 'hero' ? 'home.search' : 'planner.submit')}
         <ArrowRight size={18} aria-hidden="true" />
       </button>
     </form>

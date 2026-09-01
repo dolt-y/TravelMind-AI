@@ -9,11 +9,11 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; }
 h1, h2, h3, p { overflow-wrap: anywhere; }
-h1, h2, h3 { margin: 0; font-family: Georgia, "Times New Roman", "Noto Serif SC", serif; font-weight: 500; }
+h1, h2, h3 { margin: 0; font-family: inherit; font-weight: 700; }
 p { margin: 0; }
 svg { flex: 0 0 auto; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-.eyebrow { display: inline-flex; align-items: center; gap: 7px; color: var(--coral); font-size: 11px; font-weight: 800; line-height: 1.3; text-transform: uppercase; }
+.eyebrow { display: inline-flex; align-items: center; gap: 7px; color: var(--sea); font-size: 11px; font-weight: 800; line-height: 1.3; text-transform: uppercase; }
 .eyebrow--light { color: #f5c4b5; }
 .button { min-height: 42px; padding: 0 17px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 5px; font-size: 13px; font-weight: 750; line-height: 1.2; white-space: nowrap; }
 .button--primary { color: #fff; background: var(--forest); }

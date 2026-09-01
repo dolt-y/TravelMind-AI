@@ -35,4 +35,11 @@ export const destinationPresets: DestinationPreset[] = [
     keywordsKey: 'destinations.alpine',
     image: '/assets/travel/switzerland-lake.jpg',
   },
+  {
+    city: '挪威',
+    cityKey: 'destinations.norway',
+    keywords: '海岸徒步',
+    keywordsKey: 'destinations.hiking',
+    image: '/assets/travel/travelmind-hero.jpg',
+  },
 ]

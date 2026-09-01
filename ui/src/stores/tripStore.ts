@@ -100,7 +100,7 @@ export const useTripStore = create<TripState>()(
             set({
               planningStage: 'complete',
               enrichmentWarning: failedServices.length
-                ? `${failedServices.join('、')}资料暂时无法获取，景点结果已正常保存`
+                ? `${failedServices.join('、')}信息暂时无法获取，景点结果仍可正常查看`
                 : null,
             })
             return true
