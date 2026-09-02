@@ -111,11 +111,28 @@ GET  /api/map/weather
 POST /api/map/route
 ```
 
-Web 画面では、Spider_XHS PC の Cookie、QR コード、携帯電話番号の SMS 認証という三つの
-ログイン方法を利用できます。QR コードと SMS 認証は短時間の非同期タスクとして実行され、
-ブラウザは `login_id` で状態をポーリングします。成功したセッションは現在のサービス
-プロセス内だけで保持され、ブラウザへの返却、ログ出力、永続化は行いません。
-`TRAVELMIND_XHS_COOKIE` は任意の設定で、サービス再起動後に Web ログインの代わりに使用できます。
+ルート API は TripStar の `origin_address`、`destination_address`、`origin_city`、
+`destination_city`、`route_type` を維持します。既存 POI の `origin_location` と
+`destination_location` を渡すと住所検索を省略でき、座標がない場合は都市が必要です。
+徒歩、車、公共交通について、Provider が確認した距離、所要時間、案内手順、軌跡を返し、
+同じ条件は既定で 24 時間キャッシュします。この API は指定区間を計算するだけで、観光地の
+訪問順序は決定しません。
+
+一般ユーザーは個人の小紅書アカウントを接続せず、目的地と好みを自由に検索できます。
+Cookie、QR コード、SMS 認証は、システムのコンテンツアカウントを管理する内部管理者専用です。
+内部リクエストには、サーバー側の `TRAVELMIND_ADMIN_KEY` と一致する
+`X-TravelMind-Admin-Key` が必要です。成功したセッションは現在のサービスプロセス内だけで
+保持され、返却、ログ出力、永続化は行いません。
+
+```text
+GET  /api/admin/integrations/xhs/methods
+POST /api/admin/integrations/xhs/qrcode/start
+GET  /api/admin/integrations/xhs/{login_id}/qrcode
+GET  /api/admin/integrations/xhs/{login_id}/status
+POST /api/admin/integrations/xhs/phone/start
+POST /api/admin/integrations/xhs/phone/verify
+POST /api/admin/integrations/xhs/cookie
+```
 
 天気 API は任意の `start_date` と `end_date` を受け取り、プロバイダーが提供できる日付のみを
 返します。結果はプロバイダー、都市、予報日ごとに既定で 3 時間キャッシュされます。
@@ -183,6 +200,7 @@ cd ../..
 ```
 
 ```dotenv
+TRAVELMIND_ADMIN_KEY=replace_with_a_long_random_value
 TRAVELMIND_XHS_COOKIE=replace_me
 LLM_API_KEY=replace_me
 LLM_BASE_URL=https://api.openai.com/v1
@@ -191,6 +209,8 @@ LLM_TIMEOUT=180
 LLM_ENABLE_THINKING=false
 AMAP_API_KEY=replace_me
 WEATHER_CACHE_TTL_SECONDS=10800
+HOTEL_CACHE_TTL_SECONDS=86400
+ROUTE_CACHE_TTL_SECONDS=86400
 ```
 
 API ドキュメントは `http://127.0.0.1:8000/docs` で確認できます。詳細な実装作業、

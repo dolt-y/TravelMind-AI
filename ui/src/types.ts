@@ -97,6 +97,10 @@ export interface AttractionRequest {
 export type XHSLoginMethod = 'cookie' | 'qrcode' | 'phone'
 export type XHSLoginState = 'preparing' | 'waiting_scan' | 'waiting_confirm' | 'code_sent' | 'authenticating' | 'success' | 'expired' | 'error'
 
+export interface XHSLoginMethodsResponse {
+  methods: XHSLoginMethod[]
+}
+
 export interface XHSLoginStartResponse {
   login_id: string
   method: XHSLoginMethod

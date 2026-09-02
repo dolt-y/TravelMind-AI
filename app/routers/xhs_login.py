@@ -1,8 +1,8 @@
-"""小红书 PC 登录页面使用的二维码、验证码和 Cookie 接口。"""
+"""内部管理员维护小红书内容账号使用的登录接口。"""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from app.schemas.xhs_login import (
@@ -14,9 +14,15 @@ from app.schemas.xhs_login import (
     XHSPhoneLoginVerifyRequest,
 )
 from app.services.xhs_login import XHSLoginTask, get_xhs_login_service
+from app.security import require_admin_key
 
 
-router = APIRouter(prefix="/api/xhs/login", tags=["xiaohongshu-login"])
+# NOTE: 小红书账号属于系统内容来源，普通用户的旅行搜索不应接触这些认证材料。
+router = APIRouter(
+    prefix="/api/admin/integrations/xhs",
+    tags=["internal-xiaohongshu-integration"],
+    dependencies=[Depends(require_admin_key)],
+)
 
 
 def _status_response(task: XHSLoginTask) -> XHSLoginStatusResponse:

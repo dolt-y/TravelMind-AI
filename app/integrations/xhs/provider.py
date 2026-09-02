@@ -31,14 +31,14 @@ _RUNTIME_COOKIE_LOCK = Lock()
 
 
 def set_runtime_cookie(cookie: str) -> None:
-    """保存当前进程使用的登录会话，供 Web 登录成功后的后续请求复用。"""
+    """保存管理员更新的系统内容会话，供后续旅行检索复用。"""
     global _RUNTIME_COOKIE
     with _RUNTIME_COOKIE_LOCK:
         _RUNTIME_COOKIE = normalize_cookie(cookie)
 
 
 def clear_runtime_cookie() -> None:
-    """清除 Web 登录产生的进程内会话，不影响 .env 配置。"""
+    """清除管理员登录产生的进程内会话，不影响环境配置。"""
     global _RUNTIME_COOKIE
     with _RUNTIME_COOKIE_LOCK:
         _RUNTIME_COOKIE = ""
@@ -81,7 +81,7 @@ def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) 
 
 
 def cookie_from_environment() -> str:
-    """优先读取 Web 登录会话，否则读取环境变量中的 Cookie。"""
+    """优先读取管理员更新的运行会话，否则读取系统环境配置。"""
     return runtime_cookie() or normalize_cookie(
         os.getenv("TRAVELMIND_XHS_COOKIE") or os.getenv("XHS_COOKIE") or os.getenv("COOKIES")
     )

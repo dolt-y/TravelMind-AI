@@ -109,22 +109,24 @@ POST /api/xhs/attractions
 GET  /api/xhs/attractions/{extraction_id}
 ```
 
-The Web client also supports the three Spider_XHS PC login methods:
+Ordinary users can search any destination and preference without connecting a personal
+Xiaohongshu account. The three PC login methods are restricted to administrators maintaining the
+system content account:
 
 ```text
-GET  /api/xhs/login/methods
-POST /api/xhs/login/qrcode/start
-GET  /api/xhs/login/{login_id}/qrcode
-GET  /api/xhs/login/{login_id}/status
-POST /api/xhs/login/phone/start
-POST /api/xhs/login/phone/verify
-POST /api/xhs/login/cookie
+GET  /api/admin/integrations/xhs/methods
+POST /api/admin/integrations/xhs/qrcode/start
+GET  /api/admin/integrations/xhs/{login_id}/qrcode
+GET  /api/admin/integrations/xhs/{login_id}/status
+POST /api/admin/integrations/xhs/phone/start
+POST /api/admin/integrations/xhs/phone/verify
+POST /api/admin/integrations/xhs/cookie
 ```
 
-QR-code and phone login use a short-lived asynchronous task. The browser polls the status with
-`login_id`; after success the session is kept only in the current service process and is never
-returned to the browser, logged or persisted. A Cookie in `TRAVELMIND_XHS_COOKIE` is optional and
-is used after a service restart when no Web login session exists.
+Every internal request requires `X-TravelMind-Admin-Key` matching the server-side
+`TRAVELMIND_ADMIN_KEY`. QR-code and phone login use a short-lived asynchronous task. After success,
+the session is kept only in the current service process and is never returned, logged or persisted.
+`TRAVELMIND_XHS_COOKIE` can restore the system account after a service restart.
 
 `POST /api/xhs/attractions` is the attraction data entry point:
 
@@ -146,6 +148,13 @@ POST /api/map/route
 
 Weather queries accept optional `start_date` and `end_date` parameters. Only dates covered by the
 provider are returned. Results are cached by provider, city and forecast date for three hours by default.
+
+The route endpoint preserves TripStar's `origin_address`, `destination_address`, `origin_city`,
+`destination_city` and `route_type` fields. Existing POI coordinates can be supplied through
+`origin_location` and `destination_location`; otherwise a city is required for address resolution.
+Walking, driving and transit responses include provider-confirmed distance, duration, navigation steps
+and polylines, cached for twenty-four hours by default. The route API measures a chosen segment and does
+not decide attraction order.
 
 ### Chat and preference memory
 
@@ -196,6 +205,7 @@ cp .env.example .env
 ```
 
 ```dotenv
+TRAVELMIND_ADMIN_KEY=replace_with_a_long_random_value
 TRAVELMIND_XHS_COOKIE=replace_me
 LLM_API_KEY=replace_me
 LLM_BASE_URL=https://api.openai.com/v1
@@ -204,6 +214,8 @@ LLM_TIMEOUT=180
 LLM_ENABLE_THINKING=false
 AMAP_API_KEY=replace_me
 WEATHER_CACHE_TTL_SECONDS=10800
+HOTEL_CACHE_TTL_SECONDS=86400
+ROUTE_CACHE_TTL_SECONDS=86400
 # TRAVELMIND_DATA_DIR=/absolute/path/travelmind-data
 ```
 

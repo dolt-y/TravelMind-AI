@@ -8,9 +8,10 @@ import { PlanningView } from '../views/PlanningView'
 import { PlanView } from '../views/PlanView'
 import { ResultsView } from '../views/ResultsView'
 import { SettingsView } from '../views/SettingsView'
-import { XhsLoginView } from '../views/XhsLoginView'
+import { XhsAdminView } from '../views/XhsAdminView'
 
 export const router = createBrowserRouter([
+  { path: '/admin/integrations/xhs', element: <XhsAdminView /> },
   {
     path: '/',
     element: <AppLayout />,
@@ -22,7 +23,6 @@ export const router = createBrowserRouter([
       { path: 'results', element: <ResultsView /> },
       { path: 'library', element: <LibraryView /> },
       { path: 'settings', element: <SettingsView /> },
-      { path: 'account/xhs', element: <XhsLoginView /> },
       { path: 'discover', element: <Navigate to="/" replace /> },
       { path: '*', element: <NotFoundView /> },
     ],

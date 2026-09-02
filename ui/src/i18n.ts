@@ -19,10 +19,15 @@ const zh = {
   planning: { eyebrow: '正在准备旅行灵感', title: '正在探索 {{city}}', copy: '我们正在认真寻找适合你的地方，这通常需要一点时间。', failed: '本次规划没有完成', back: '返回修改条件' },
   results: { saved: '本次旅行灵感', title: '{{city}}旅行候选', summary: '参考 {{notes}} 篇旅行分享，整理出 {{places}} 个地点', retry: '重新规划', placesEyebrow: '推荐地点', places: '值得进一步了解的地方', favorite: '收藏地点', unfavorite: '取消收藏', reservation: '建议预约', addressPending: '地点地址暂未完善', liveData: '出行参考', weather: '目的地天气', hotels: '住宿选择', weatherEmpty: '暂时没有天气信息', hotelEmpty: '暂时没有住宿信息', perNight: '/晚', noPlaces: '没有找到合适的地点，请调整偏好后重试。', emptyTitle: '还没有旅行结果', emptyCopy: '先选择目的地，开始你的第一次旅行探索。', start: '开始规划' },
   library: { eyebrow: '我的资料', title: '继续上一次旅行探索', copy: '查看你最近整理的目的地和旅行灵感。', emptyTitle: '这里还是空的', emptyCopy: '完成一次目的地探索后，行程会出现在这里。', start: '开始规划', latest: '最近一次探索', summary: '{{notes}} 篇旅行分享 · {{places}} 个地点', noPreference: '随心探索', open: '查看行程' },
-  settings: { eyebrow: '账户设置', title: '偏好与账户', copy: '管理界面语言和旅行灵感来源。', language: '界面语言', languageCopy: '切换导航、页面和操作文案', xhs: '小红书连接', xhsCopy: '连接后可以发现更多真实旅行灵感', manage: '管理连接' },
-  login: {
-    eyebrow: '旅行灵感来源', title: '连接小红书', copy: '选择一种登录方式，发现更多真实旅行分享。', method: '登录方式', qrcode: '二维码', phone: '手机号', qrAlt: '小红书登录二维码', qrReady: '生成二维码后使用小红书扫码', qrStart: '生成二维码', qrRestart: '重新生成', phoneNumber: '手机号码', code: '验证码', codePlaceholder: '输入短信验证码', sendCode: '发送验证码', verify: '验证并登录', cookieLabel: 'Cookie', cookieNote: '登录信息仅用于本次连接，输入内容不会在页面中保留。', cookieSubmit: '使用 Cookie 登录', error: '登录请求失败',
-    states: { preparing: '正在准备', waiting_scan: '等待扫码', waiting_confirm: '等待手机确认', code_sent: '验证码已发送', authenticating: '正在验证', success: '登录成功', expired: '登录已过期', error: '登录失败' },
+  settings: { eyebrow: '账户设置', title: '偏好与账户', copy: '管理你的使用偏好。', language: '界面语言', languageCopy: '切换导航、页面和操作文案' },
+  adminXhs: {
+    shell: { label: '内部管理', back: '返回用户端', exit: '退出管理' },
+    eyebrow: '系统内容来源', title: '小红书内容账号管理', copy: '维护 TravelMind 获取旅行灵感所使用的系统账号。此页面仅面向授权管理员。',
+    access: { title: '验证管理员身份', copy: '输入服务端配置的管理密钥后才能维护系统账号。', keyLabel: '管理密钥', keyPlaceholder: '输入内部管理密钥', showKey: '显示密钥', hideKey: '隐藏密钥', memoryOnly: '密钥仅保留在当前页面内存中，刷新或退出后自动清除。', submit: '进入管理', verified: '管理员已验证' },
+    account: { eyebrow: '账号维护', title: '小红书系统账号', copy: '选择一种方式更新当前服务使用的内容账号会话。普通用户不会看到或接触这些登录信息。' },
+    login: { method: '登录方式', qrcode: '二维码', phone: '手机号', qrAlt: '小红书系统账号登录二维码', qrReady: '生成二维码后使用小红书扫码', qrStart: '生成二维码', qrRestart: '重新生成', zone: '区号', phoneNumber: '手机号码', code: '验证码', codePlaceholder: '输入短信验证码', sendCode: '发送验证码', verify: '验证并登录', cookieLabel: 'Cookie', cookieNote: 'Cookie 只会提交给当前 TravelMind 服务，不会保存在浏览器中。', cookieSubmit: '验证 Cookie', currentUser: '当前账号：{{name}}' },
+    states: { preparing: '正在准备', waiting_scan: '等待扫码', waiting_confirm: '等待手机确认', code_sent: '验证码已发送', authenticating: '正在验证', success: '系统账号已更新', expired: '登录已过期', error: '登录失败' },
+    errors: { access: '管理员验证失败', request: '账号维护请求失败', qrcode: '二维码加载失败，请重新生成' },
   },
   notFound: { copy: '没有找到这个页面。', home: '返回首页' },
 }
@@ -45,8 +50,16 @@ const en = {
   planning: { eyebrow: 'PREPARING TRAVEL IDEAS', title: 'Exploring {{city}}', copy: 'We are carefully looking for places that suit you. This usually takes a moment.', failed: 'Planning could not be completed', back: 'Edit preferences' },
   results: { saved: 'YOUR TRAVEL IDEAS', title: '{{city}} travel candidates', summary: '{{notes}} travel stories led to {{places}} places', retry: 'Plan again', placesEyebrow: 'RECOMMENDED PLACES', places: 'Places worth a closer look', favorite: 'Favorite place', unfavorite: 'Remove favorite', reservation: 'Reservation suggested', addressPending: 'Address not available yet', liveData: 'TRAVEL CONDITIONS', weather: 'Destination weather', hotels: 'Places to stay', weatherEmpty: 'Weather is not available yet', hotelEmpty: 'Accommodation is not available yet', perNight: '/night', noPlaces: 'No suitable places were found. Adjust your preferences and try again.', emptyTitle: 'No trip ideas yet', emptyCopy: 'Choose a destination and begin your first exploration.', start: 'Start planning' },
   library: { eyebrow: 'MY TRIPS', title: 'Continue your latest exploration', copy: 'See the destinations and travel ideas you recently prepared.', emptyTitle: 'Nothing here yet', emptyCopy: 'Complete a destination search and your trip will appear here.', start: 'Plan a trip', latest: 'Latest exploration', summary: '{{notes}} travel stories · {{places}} places', noPreference: 'Explore freely', open: 'View trip' },
-  settings: { eyebrow: 'ACCOUNT', title: 'Preferences and account', copy: 'Manage your interface language and travel inspiration connection.', language: 'Interface language', languageCopy: 'Change navigation and page copy', xhs: 'Xiaohongshu connection', xhsCopy: 'Connect to discover more real travel inspiration', manage: 'Manage connection' },
-  login: { eyebrow: 'TRAVEL INSPIRATION', title: 'Connect Xiaohongshu', copy: 'Choose a sign-in method to discover more real travel stories.', method: 'Login method', qrcode: 'QR code', phone: 'Phone', qrAlt: 'Xiaohongshu login QR code', qrReady: 'Generate a code and scan it with Xiaohongshu', qrStart: 'Generate code', qrRestart: 'Generate again', phoneNumber: 'Phone number', code: 'Verification code', codePlaceholder: 'Enter SMS code', sendCode: 'Send code', verify: 'Verify and log in', cookieLabel: 'Cookie', cookieNote: 'Login details are used only for this connection and are cleared from the page afterward.', cookieSubmit: 'Log in with Cookie', error: 'Login request failed', states: { preparing: 'Preparing', waiting_scan: 'Waiting for scan', waiting_confirm: 'Waiting for confirmation', code_sent: 'Code sent', authenticating: 'Authenticating', success: 'Signed in', expired: 'Login expired', error: 'Login failed' } },
+  settings: { eyebrow: 'ACCOUNT', title: 'Preferences and account', copy: 'Manage your experience preferences.', language: 'Interface language', languageCopy: 'Change navigation and page copy' },
+  adminXhs: {
+    shell: { label: 'Internal admin', back: 'Back to site', exit: 'Exit admin' },
+    eyebrow: 'SYSTEM CONTENT SOURCE', title: 'Xiaohongshu content account', copy: 'Maintain the system account TravelMind uses to find travel inspiration. This page is for authorized administrators only.',
+    access: { title: 'Verify administrator access', copy: 'Enter the management key configured on the server before maintaining the system account.', keyLabel: 'Management key', keyPlaceholder: 'Enter internal management key', showKey: 'Show key', hideKey: 'Hide key', memoryOnly: 'The key stays only in this page memory and is cleared on refresh or exit.', submit: 'Enter administration', verified: 'Administrator verified' },
+    account: { eyebrow: 'ACCOUNT MAINTENANCE', title: 'Xiaohongshu system account', copy: 'Choose a method to update the content account session used by this service. Regular users never see or handle these credentials.' },
+    login: { method: 'Login method', qrcode: 'QR code', phone: 'Phone', qrAlt: 'Xiaohongshu system account login QR code', qrReady: 'Generate a code and scan it with Xiaohongshu', qrStart: 'Generate QR code', qrRestart: 'Generate again', zone: 'Code', phoneNumber: 'Phone number', code: 'Verification code', codePlaceholder: 'Enter SMS code', sendCode: 'Send code', verify: 'Verify and log in', cookieLabel: 'Cookie', cookieNote: 'The Cookie is submitted only to this TravelMind service and is not stored in the browser.', cookieSubmit: 'Verify Cookie', currentUser: 'Current account: {{name}}' },
+    states: { preparing: 'Preparing', waiting_scan: 'Waiting for scan', waiting_confirm: 'Waiting for phone confirmation', code_sent: 'Code sent', authenticating: 'Authenticating', success: 'System account updated', expired: 'Login expired', error: 'Login failed' },
+    errors: { access: 'Administrator verification failed', request: 'Account maintenance request failed', qrcode: 'Could not load the QR code. Generate a new one.' },
+  },
   notFound: { copy: 'This page could not be found.', home: 'Back home' },
 }
 
@@ -68,8 +81,16 @@ const ja = {
   planning: { eyebrow: '旅のアイデアを準備中', title: '{{city}}を探索中', copy: 'あなたに合う場所を探しています。少しだけお待ちください。', failed: '計画を完了できませんでした', back: '条件を変更する' },
   results: { saved: '今回の旅のアイデア', title: '{{city}}の旅行候補', summary: '{{notes}} 件の旅行記事から {{places}} 地点を整理しました', retry: 'もう一度計画', placesEyebrow: 'おすすめ場所', places: '詳しく知りたい場所', favorite: 'お気に入り', unfavorite: 'お気に入りを解除', reservation: '予約推奨', addressPending: '住所は準備中です', liveData: '旅の参考', weather: '目的地の天気', hotels: '宿泊先', weatherEmpty: '天気情報はまだありません', hotelEmpty: '宿泊情報はまだありません', perNight: '/泊', noPlaces: '場所が見つかりません。好みを変えてお試しください。', emptyTitle: '旅の候補がありません', emptyCopy: '目的地を選んで最初の探索を始めましょう。', start: '計画を始める' },
   library: { eyebrow: 'マイトリップ', title: '前回の探索を続ける', copy: '最近整理した目的地と旅のアイデアを確認できます。', emptyTitle: 'まだ何もありません', emptyCopy: '目的地を探索すると旅がここに表示されます。', start: '旅を計画', latest: '最近の探索', summary: '{{notes}} 件の旅行記事 · {{places}} 地点', noPreference: '自由に探索', open: '旅を見る' },
-  settings: { eyebrow: 'アカウント', title: '好みとアカウント', copy: '表示言語と旅の情報源を管理します。', language: '表示言語', languageCopy: 'ナビゲーションとページの言語を変更', xhs: '小紅書との接続', xhsCopy: '接続すると、より多くの旅行アイデアを見つけられます', manage: '接続を管理' },
-  login: { eyebrow: '旅の情報源', title: '小紅書に接続', copy: 'ログイン方法を選び、より多くの旅行記事を見つけましょう。', method: 'ログイン方法', qrcode: 'QR コード', phone: '電話番号', qrAlt: '小紅書ログイン QR コード', qrReady: 'QR コードを生成して小紅書でスキャン', qrStart: 'QR を生成', qrRestart: '再生成', phoneNumber: '電話番号', code: '確認コード', codePlaceholder: 'SMS コードを入力', sendCode: 'コードを送信', verify: '確認してログイン', cookieLabel: 'Cookie', cookieNote: 'ログイン情報は今回の接続にのみ使用され、入力内容はページに残りません。', cookieSubmit: 'Cookie でログイン', error: 'ログインに失敗しました', states: { preparing: '準備中', waiting_scan: 'スキャン待ち', waiting_confirm: '確認待ち', code_sent: 'コード送信済み', authenticating: '確認中', success: 'ログイン成功', expired: '期限切れ', error: 'ログイン失敗' } },
+  settings: { eyebrow: 'アカウント', title: '好みとアカウント', copy: '利用時の好みを管理します。', language: '表示言語', languageCopy: 'ナビゲーションとページの言語を変更' },
+  adminXhs: {
+    shell: { label: '内部管理', back: 'ユーザー画面へ', exit: '管理を終了' },
+    eyebrow: 'システムコンテンツソース', title: '小紅書コンテンツアカウント管理', copy: 'TravelMind が旅行情報を探すために使用するシステムアカウントを管理します。このページは管理者専用です。',
+    access: { title: '管理者認証', copy: 'システムアカウントを管理するには、サーバーに設定された管理キーを入力してください。', keyLabel: '管理キー', keyPlaceholder: '内部管理キーを入力', showKey: 'キーを表示', hideKey: 'キーを隠す', memoryOnly: 'キーはこのページのメモリにのみ保持され、再読み込みまたは終了時に消去されます。', submit: '管理画面へ', verified: '管理者認証済み' },
+    account: { eyebrow: 'アカウント管理', title: '小紅書システムアカウント', copy: 'このサービスが使用するコンテンツアカウントのセッションを更新します。一般ユーザーにはログイン情報を表示しません。' },
+    login: { method: 'ログイン方法', qrcode: 'QR コード', phone: '電話番号', qrAlt: '小紅書システムアカウントのログイン QR コード', qrReady: 'QR コードを生成して小紅書でスキャン', qrStart: 'QR コードを生成', qrRestart: '再生成', zone: '国番号', phoneNumber: '電話番号', code: '確認コード', codePlaceholder: 'SMS コードを入力', sendCode: 'コードを送信', verify: '確認してログイン', cookieLabel: 'Cookie', cookieNote: 'Cookie は現在の TravelMind サービスにのみ送信され、ブラウザには保存されません。', cookieSubmit: 'Cookie を確認', currentUser: '現在のアカウント：{{name}}' },
+    states: { preparing: '準備中', waiting_scan: 'スキャン待ち', waiting_confirm: 'スマートフォンの確認待ち', code_sent: 'コード送信済み', authenticating: '確認中', success: 'システムアカウント更新済み', expired: 'ログイン期限切れ', error: 'ログイン失敗' },
+    errors: { access: '管理者認証に失敗しました', request: 'アカウント管理のリクエストに失敗しました', qrcode: 'QR コードを読み込めません。再生成してください。' },
+  },
   notFound: { copy: 'ページが見つかりません。', home: 'ホームへ戻る' },
 }
 

@@ -1,4 +1,4 @@
-"""管理小红书 PC 登录任务，并把登录结果交给当前运行会话。"""
+"""管理内部小红书内容账号登录任务，并更新系统运行会话。"""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ class XHSLoginTask:
 
 
 class XHSLoginService:
-    """提供二维码、手机号和 Cookie 三种 PC 登录入口。"""
+    """为内部管理员提供三种系统内容账号登录方式。"""
 
     def __init__(self) -> None:
         self._tasks: dict[str, XHSLoginTask] = {}
@@ -287,5 +287,5 @@ _LOGIN_SERVICE = XHSLoginService()
 
 
 def get_xhs_login_service() -> XHSLoginService:
-    """返回进程级登录服务，保证登录任务和搜索会话共享。"""
+    """返回进程级登录服务，保证管理员登录结果可供内容检索复用。"""
     return _LOGIN_SERVICE

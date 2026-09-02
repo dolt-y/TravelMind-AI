@@ -166,14 +166,14 @@ GET  /api/xhs/notes/{note_id}
 POST /api/xhs/attractions
 GET  /api/xhs/attractions/{extraction_id}
 
-# 小红书 PC 登录
-GET  /api/xhs/login/methods
-POST /api/xhs/login/qrcode/start
-GET  /api/xhs/login/{login_id}/qrcode
-GET  /api/xhs/login/{login_id}/status
-POST /api/xhs/login/phone/start
-POST /api/xhs/login/phone/verify
-POST /api/xhs/login/cookie
+# 内部管理员维护系统内容账号
+GET  /api/admin/integrations/xhs/methods
+POST /api/admin/integrations/xhs/qrcode/start
+GET  /api/admin/integrations/xhs/{login_id}/qrcode
+GET  /api/admin/integrations/xhs/{login_id}/status
+POST /api/admin/integrations/xhs/phone/start
+POST /api/admin/integrations/xhs/phone/verify
+POST /api/admin/integrations/xhs/cookie
 ```
 
 其中 `POST /api/xhs/attractions` 是景点资料处理入口：
@@ -182,9 +182,11 @@ POST /api/xhs/login/cookie
 小红书搜索 -> 笔记详情 -> LLM 提取 -> POI 匹配 -> SQLite 保存
 ```
 
-小红书登录页面支持 Cookie、二维码和手机号验证码三种 PC 登录方式。二维码和手机号登录会创建
-短时异步任务，页面通过 `login_id` 轮询状态；登录成功后会话只保存在当前服务进程内，不返回或打印完整 Cookie。
-服务重启后如需继续使用已有会话，可以在 `.env` 配置 `TRAVELMIND_XHS_COOKIE`。
+普通用户可以自由提交目的地和旅行偏好，但不需要登录个人小红书账号。小红书是系统内部的
+旅行内容来源，Cookie、二维码和手机号验证码三种 PC 登录方式只供管理员维护系统内容账号。
+所有内部管理请求必须携带 `X-TravelMind-Admin-Key`，其值来自服务端
+`TRAVELMIND_ADMIN_KEY`。二维码和手机号登录使用短时异步任务；成功会话只保存在当前服务
+进程内，不返回或打印完整 Cookie。服务重启后可使用 `TRAVELMIND_XHS_COOKIE` 恢复系统账号。
 
 请求示例：
 
@@ -215,6 +217,12 @@ POST /api/map/route
 景点区域，相同查询条件默认缓存二十四小时。POI、天气和酒店接口只返回地图服务的事实
 数据，缺失的酒店价格、评分或地址保留为空。景点图片接口按需从小红书查询首图，并缓存
 图片地址。
+
+路线接口兼容 TripStar 的 `origin_address`、`destination_address`、`origin_city`、
+`destination_city` 和 `route_type` 字段，并支持传入已有 POI 的 `origin_location` 与
+`destination_location`，避免重复解析地址。未传坐标时必须提供城市。`route_type` 支持
+`walking`、`driving`、`transit`；响应包含供应商确认的总距离、总耗时、导航步骤和轨迹，
+相同查询条件默认缓存二十四小时。路线 API 只计算已确定起终点之间的事实，不决定景点顺序。
 
 ### 行程问答与偏好记忆
 
@@ -293,7 +301,10 @@ cp .env.example .env
 ```
 
 ```dotenv
-# 可选：小红书网页端登录 Cookie；也可以通过 Web 登录页面建立当前运行会话
+# 内部管理接口密钥，不得复用为普通用户身份凭证
+TRAVELMIND_ADMIN_KEY=replace_with_a_long_random_value
+
+# 系统内容账号 Cookie；也可以由管理员通过内部接口更新当前运行会话
 TRAVELMIND_XHS_COOKIE=replace_me
 
 # OpenAI-compatible LLM
@@ -308,6 +319,10 @@ AMAP_API_KEY=replace_me
 
 # 天气缓存有效期，单位为秒
 WEATHER_CACHE_TTL_SECONDS=10800
+
+# 酒店和路线缓存有效期，单位为秒
+HOTEL_CACHE_TTL_SECONDS=86400
+ROUTE_CACHE_TTL_SECONDS=86400
 
 # SQLite 数据目录，可选
 # TRAVELMIND_DATA_DIR=/absolute/path/travelmind-data

@@ -99,21 +99,3 @@
 .settings-list article > div { display: grid; gap: 5px; }
 .settings-list strong { font-size: 13px; }
 .settings-list article > div > span { color: var(--muted); font-size: 11px; line-height: 1.5; }
-.segmented-control { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: #ebeae4; }
-.segmented-control button { min-height: 36px; padding: 0 13px; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); border: 0; border-radius: 4px; background: transparent; font-size: 11px; font-weight: 750; }
-.segmented-control button.is-active { color: var(--ink); background: var(--paper); box-shadow: 0 1px 4px rgba(20, 35, 29, .09); }
-.login-panel { max-width: 720px; min-height: 420px; margin-top: 18px; padding: 34px; display: grid; align-content: center; gap: 20px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); }
-.login-panel__center { display: grid; justify-items: center; gap: 17px; }
-.qr-placeholder, .qr-image { width: 220px; height: 220px; border: 1px solid var(--line); border-radius: 5px; background: #f4f4ef; }
-.qr-placeholder { display: flex; align-items: center; flex-direction: column; justify-content: center; gap: 12px; color: var(--muted); font-size: 11px; text-align: center; }
-.qr-placeholder svg { color: var(--sea); }
-.qr-image { padding: 8px; object-fit: contain; }
-.login-form { width: min(100%, 500px); display: grid; gap: 17px; }
-.phone-code-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
-.login-form > .button { justify-self: start; }
-.form-note { display: flex; align-items: flex-start; gap: 6px; color: var(--muted); font-size: 10px; line-height: 1.55; }
-.form-note svg { margin-top: 1px; color: var(--success); }
-.login-status { padding: 11px 13px; display: grid; gap: 3px; color: var(--ink-soft); border-left: 3px solid var(--sea); background: #edf5f6; font-size: 11px; }
-.login-status strong { font-size: 11px; }
-.login-status--success { border-color: var(--success); background: #edf5ef; }
-.login-status--error, .login-status--expired { border-color: var(--danger); background: #fff0ef; }

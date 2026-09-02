@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.routers.hotel import router as hotel_router
 from app.routers.poi import map_router as map_poi_router
 from app.routers.poi import router as poi_router
+from app.routers.route import router as route_router
 from app.routers.weather import map_router as map_weather_router
 from app.routers.weather import router as weather_router
 from app.routers.xhs import router as xhs_router
@@ -20,6 +21,7 @@ app.include_router(map_poi_router)
 app.include_router(weather_router)
 app.include_router(map_weather_router)
 app.include_router(hotel_router)
+app.include_router(route_router)
 
 
 @app.get("/")
