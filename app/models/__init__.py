@@ -2,6 +2,7 @@
 
 from .hotel import Hotel, HotelSearchCriteria, HotelSearchResult
 from .poi import POI, POILocation
+from .trip import TripDay, TripPlan, TripPlanningRequest
 from .weather import WeatherForecast, WeatherQueryResult
 from .xhs import AttractionCandidate, XHSExtraction, XHSNote
 
@@ -12,6 +13,9 @@ __all__ = [
     "HotelSearchResult",
     "POI",
     "POILocation",
+    "TripDay",
+    "TripPlan",
+    "TripPlanningRequest",
     "WeatherForecast",
     "WeatherQueryResult",
     "XHSExtraction",

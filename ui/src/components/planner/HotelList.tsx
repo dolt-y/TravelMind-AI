@@ -1,17 +1,17 @@
 import { MapPin, Star } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { HotelSearchResponse } from '../../types'
+import type { Hotel } from '../../types'
 
-export function HotelList({ hotels }: { hotels: HotelSearchResponse | null }) {
+export function HotelList({ hotels }: { hotels: Hotel[] }) {
   const { t } = useTranslation()
 
-  if (!hotels?.data.length) {
+  if (!hotels.length) {
     return <p className="data-empty">{t('results.hotelEmpty')}</p>
   }
 
   return (
     <div className="hotel-list">
-      {hotels.data.slice(0, 6).map((hotel) => (
+      {hotels.slice(0, 6).map((hotel) => (
         <article key={hotel.id}>
           <img src={hotel.photos[0] || '/assets/travel/amalfi-coast.jpg'} alt="" loading="lazy" />
           <div>

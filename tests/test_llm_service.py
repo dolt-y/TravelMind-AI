@@ -6,7 +6,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from app.services.llm_service import LLMService, LLMServiceError
+from app.services.llm_service import LLMService, LLMServiceError, parse_json_object
 
 
 class LLMServiceTest(unittest.TestCase):
@@ -64,6 +64,11 @@ class LLMServiceTest(unittest.TestCase):
         ):
             with self.assertRaisesRegex(LLMServiceError, "只能设置为 true 或 false"):
                 LLMService()
+
+    def test_parses_trip_object_from_markdown_block(self) -> None:
+        """完整行程解析器应接受模型常见的 JSON 代码块。"""
+        payload = parse_json_object('```json\n{"days": [], "overall_suggestions": "ok"}\n```')
+        self.assertEqual(payload["days"], [])
 
 
 if __name__ == "__main__":

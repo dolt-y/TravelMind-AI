@@ -54,6 +54,21 @@ class XHSProviderError(RuntimeError):
     """可安全转换为接口错误响应的预期服务异常。"""
 
 
+class XHSAuthenticationRequiredError(XHSProviderError):
+    """系统小红书账号缺少可用登录态。"""
+
+
+_AUTH_REQUIRED_MESSAGES = ("登录已过期", "请先登录", "未登录")
+
+
+def _raise_upstream_error(prefix: str, message: object) -> None:
+    """把上游明确的登录失效响应与普通请求失败分开。"""
+    normalized = str(message or "未知错误").strip()
+    if any(marker in normalized for marker in _AUTH_REQUIRED_MESSAGES):
+        raise XHSAuthenticationRequiredError("小红书系统账号登录已失效")
+    raise XHSProviderError(f"{prefix}: {normalized}")
+
+
 def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) -> str:
     """将请求头字符串或浏览器导出的 Cookie 数据统一为请求头字符串。"""
     if value is None:
@@ -134,9 +149,7 @@ class XHSProvider:
         """使用传入或环境变量中的 Cookie 初始化小红书客户端。"""
         self.cookie = normalize_cookie(cookie) if cookie is not None else cookie_from_environment()
         if not self.cookie:
-            raise XHSProviderError(
-                "XHS Cookie 未配置，请设置 TRAVELMIND_XHS_COOKIE 或 XHS_COOKIE"
-            )
+            raise XHSAuthenticationRequiredError("小红书系统账号未登录")
         try:
             self.auth = XHSPcAuth.from_cookie(self.cookie, proxies=proxies)
             self.api = XHS_Apis(self.auth)
@@ -166,7 +179,7 @@ class XHSProvider:
         except Exception as exc:
             raise XHSProviderError(f"小红书搜索请求失败: {exc}") from exc
         if not success:
-            raise XHSProviderError(f"小红书搜索失败: {message}")
+            _raise_upstream_error("小红书搜索失败", message)
         return [_note_from_item(item) for item in (items or []) if isinstance(item, dict)]
 
     def get_note(
@@ -187,7 +200,7 @@ class XHSProvider:
         except Exception as exc:
             raise XHSProviderError(f"小红书详情请求失败: {exc}") from exc
         if not success:
-            raise XHSProviderError(f"小红书详情获取失败: {message}")
+            _raise_upstream_error("小红书详情获取失败", message)
         items = ((response or {}).get("data") or {}).get("items") or []
         if not items or not isinstance(items[0], dict):
             raise XHSProviderError("小红书详情响应中没有笔记数据")

@@ -1,4 +1,4 @@
-"""封装 OpenAI-compatible Chat Completions，提供景点提取所需的文本和 JSON 解析。"""
+"""封装 OpenAI-compatible Chat Completions，提供旅行规划所需的文本和 JSON 解析。"""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ class LLMService:
         )
 
     def complete(self, prompt: str) -> str:
-        """提交景点提取提示词并返回模型文本，不记录密钥或原始请求头。"""
+        """提交结构化旅行任务提示词并返回模型文本，不记录敏感请求内容。"""
         started_at = time.perf_counter()
         request_options: dict[str, Any] = {}
         if "dashscope.aliyuncs.com" in self.base_url:
@@ -129,3 +129,23 @@ def parse_json_payload(content: str) -> list[dict[str, Any]]:
         if isinstance(value, dict) and isinstance(value.get("attractions"), list):
             return [item for item in value["attractions"] if isinstance(item, dict)]
     raise LLMServiceError("LLM 返回内容不是有效的景点 JSON 数组")
+
+
+def parse_json_object(content: str) -> dict[str, Any]:
+    """从纯 JSON、代码块或带少量说明的模型文本中提取对象。"""
+    text = content.strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s*```$", "", text)
+    decoder = json.JSONDecoder()
+    candidates = [text]
+    object_start = text.find("{")
+    if object_start >= 0:
+        candidates.append(text[object_start:])
+    for candidate in candidates:
+        try:
+            value, _ = decoder.raw_decode(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            return value
+    raise LLMServiceError("LLM 返回内容不是有效的旅行计划 JSON 对象")

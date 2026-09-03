@@ -2,7 +2,12 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.integrations.xhs import XHSNote, XHSProvider, XHSProviderError
+from app.integrations.xhs import (
+    XHSAuthenticationRequiredError,
+    XHSNote,
+    XHSProvider,
+    XHSProviderError,
+)
 from app.schemas.attraction import (
     AttractionCandidate as AttractionCandidateResponse,
     XHSAttractionRequest,
@@ -11,12 +16,27 @@ from app.schemas.attraction import (
 )
 from app.schemas.xhs import XHSNoteResponse, XHSSearchRequest, XHSSearchResponse
 from app.services.attraction_extractor import (
+    AttractionAuthenticationRequiredError,
     AttractionExtractionError,
     extract_attractions_with_metadata,
 )
 from app.storage.xhs_repository import XHSRepository, XHSRepositoryError
 
 router = APIRouter(prefix="/api/xhs", tags=["xiaohongshu"])
+
+XHS_AUTH_REQUIRED = "XHS_AUTH_REQUIRED"
+
+
+def _authentication_required() -> HTTPException:
+    """构造系统内容账号未登录时的稳定 REST 错误。"""
+    # 使用 503 表示系统内容来源暂不可用，避免与普通用户的 401 身份认证混淆。
+    return HTTPException(
+        status_code=503,
+        detail={
+            "code": XHS_AUTH_REQUIRED,
+            "message": "小红书系统账号未登录，请管理员完成登录",
+        },
+    )
 
 
 def _response(note: XHSNote) -> XHSNoteResponse:
@@ -53,6 +73,8 @@ def search_xhs(request: XHSSearchRequest) -> XHSSearchResponse:
                 sort_type=request.sort_type,
             )
         return XHSSearchResponse(keyword=request.keyword, items=[_response(note) for note in notes])
+    except XHSAuthenticationRequiredError as exc:
+        raise _authentication_required() from exc
     except XHSProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -72,6 +94,8 @@ def get_xhs_note(
                 xsec_source=xsec_source,
             )
         return _response(note)
+    except XHSAuthenticationRequiredError as exc:
+        raise _authentication_required() from exc
     except XHSProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -93,6 +117,8 @@ def extract_xhs_attractions(request: XHSAttractionRequest) -> XHSAttractionRespo
             notes_count=extraction.notes_count,
             attractions=[_attraction_response(item) for item in extraction.attractions],
         )
+    except AttractionAuthenticationRequiredError as exc:
+        raise _authentication_required() from exc
     except AttractionExtractionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

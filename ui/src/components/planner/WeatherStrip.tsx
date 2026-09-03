@@ -1,17 +1,17 @@
 import { CloudSun, Wind } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { WeatherResponse } from '../../types'
+import type { WeatherForecast } from '../../types'
 
-export function WeatherStrip({ weather }: { weather: WeatherResponse | null }) {
+export function WeatherStrip({ weather }: { weather: WeatherForecast[] }) {
   const { t } = useTranslation()
 
-  if (!weather?.data.length) {
+  if (!weather.length) {
     return <p className="data-empty">{t('results.weatherEmpty')}</p>
   }
 
   return (
     <div className="weather-strip">
-      {weather.data.slice(0, 4).map((day) => (
+      {weather.slice(0, 4).map((day) => (
         <article key={day.date}>
           <time>{day.date.slice(5)}</time>
           <CloudSun size={22} aria-hidden="true" />

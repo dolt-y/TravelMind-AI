@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { ArrowRight, MapPin, Sparkles } from 'lucide-react'
+import { ArrowRight, CalendarDays, Car, Footprints, MapPin, Sparkles, TrainFront, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTripStore } from '../../stores/tripStore'
 
@@ -16,6 +16,13 @@ export function PlannerForm({ mode = 'full', onSubmit }: PlannerFormProps) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (draft.city.trim()) onSubmit()
+  }
+
+  function updateStartDate(startDate: string) {
+    updateDraft({
+      startDate,
+      endDate: draft.endDate < startDate ? startDate : draft.endDate,
+    })
   }
 
   return (
@@ -47,6 +54,96 @@ export function PlannerForm({ mode = 'full', onSubmit }: PlannerFormProps) {
       )}
       {mode === 'full' && (
         <>
+          <label className="field">
+            <span>{t('planner.startDate')}</span>
+            <div className="field__control">
+              <CalendarDays size={18} aria-hidden="true" />
+              <input
+                type="date"
+                value={draft.startDate}
+                onChange={(event) => updateStartDate(event.target.value)}
+                required
+              />
+            </div>
+          </label>
+          <label className="field">
+            <span>{t('planner.endDate')}</span>
+            <div className="field__control">
+              <CalendarDays size={18} aria-hidden="true" />
+              <input
+                type="date"
+                min={draft.startDate}
+                value={draft.endDate}
+                onChange={(event) => updateDraft({ endDate: event.target.value })}
+                required
+              />
+            </div>
+          </label>
+          <fieldset className="field field--transport">
+            <legend>{t('planner.transportation')}</legend>
+            <div className="transport-options">
+              {([
+                ['walking', Footprints],
+                ['transit', TrainFront],
+                ['driving', Car],
+              ] as const).map(([value, Icon]) => (
+                <button
+                  className={draft.transportation === value ? 'is-active' : ''}
+                  key={value}
+                  type="button"
+                  onClick={() => updateDraft({ transportation: value })}
+                >
+                  <Icon size={16} />{t(`planner.transport.${value}`)}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <label className="field">
+            <span>{t('planner.travelers')}</span>
+            <div className="field__control">
+              <Users size={18} aria-hidden="true" />
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={draft.travelers}
+                onChange={(event) => updateDraft({ travelers: Number(event.target.value) })}
+                required
+              />
+            </div>
+          </label>
+          <label className="field">
+            <span>{t('planner.accommodation')}</span>
+            <select
+              value={draft.accommodation}
+              onChange={(event) => updateDraft({ accommodation: event.target.value })}
+            >
+              <option value="经济型酒店">{t('planner.stays.budget')}</option>
+              <option value="舒适型酒店">{t('planner.stays.comfort')}</option>
+              <option value="高档酒店">{t('planner.stays.premium')}</option>
+              <option value="特色民宿">{t('planner.stays.local')}</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>{t('planner.hotelBudget')}</span>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              value={draft.hotelBudgetMax}
+              onChange={(event) => updateDraft({ hotelBudgetMax: Number(event.target.value) })}
+            />
+          </label>
+          <label className="field">
+            <span>{t('planner.totalBudget')}</span>
+            <input
+              type="number"
+              min="0"
+              step="500"
+              value={draft.totalBudget}
+              onChange={(event) => updateDraft({ totalBudget: Number(event.target.value) })}
+            />
+          </label>
           <label className="field">
             <span>{t('planner.noteCount')}</span>
             <select

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Cookie, LoaderCircle, Phone, QrCode, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Cookie, LoaderCircle, Phone, QrCode, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   getXhsAdminLoginStatus,
@@ -20,13 +20,14 @@ const terminalStates = new Set(['success', 'expired', 'error'])
 interface XhsAccountManagerProps {
   adminKey: string
   methods: XHSLoginMethod[]
+  onContinue?: () => void
 }
 
 function taskFromStart(response: XHSLoginStartResponse): XHSLoginStatusResponse {
   return { ...response, qr_url: null, user_nickname: null }
 }
 
-export function XhsAccountManager({ adminKey, methods }: XhsAccountManagerProps) {
+export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountManagerProps) {
   const { t } = useTranslation()
   const defaultMethod = methods.includes('qrcode') ? 'qrcode' : (methods[0] || 'cookie')
   const [method, setMethod] = useState<XHSLoginMethod>(defaultMethod)
@@ -219,6 +220,11 @@ export function XhsAccountManager({ adminKey, methods }: XhsAccountManagerProps)
             <strong>{t(`adminXhs.states.${task.state}`)}</strong>
             <span>{task.message}</span>
             {task.user_nickname && <span>{t('adminXhs.login.currentUser', { name: task.user_nickname })}</span>}
+            {task.state === 'success' && onContinue && (
+              <button className="button button--primary login-status__action" type="button" onClick={onContinue}>
+                {t('adminXhs.login.continuePlanning')}<ArrowRight size={16} />
+              </button>
+            )}
           </div>
         )}
         {error && <div className="inline-alert inline-alert--error" role="alert">{error}</div>}

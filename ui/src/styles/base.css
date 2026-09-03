@@ -33,4 +33,5 @@ svg { flex: 0 0 auto; }
 .field__control input { height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; }
 .field__control:focus-within, .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--sea); box-shadow: 0 0 0 3px rgba(50, 122, 142, .11); }
 .spin { animation: spin .8s linear infinite; }
+.route-loading { min-height: calc(100vh - 72px); display: grid; place-items: center; color: var(--sea); }
 @keyframes spin { to { transform: rotate(360deg); } }

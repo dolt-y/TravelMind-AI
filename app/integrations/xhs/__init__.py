@@ -1,5 +1,17 @@
 """TravelMind 的小红书服务适配边界。"""
 
-from .provider import XHSLoginApi, XHSNote, XHSProvider, XHSProviderError
+from .provider import (
+    XHSAuthenticationRequiredError,
+    XHSLoginApi,
+    XHSNote,
+    XHSProvider,
+    XHSProviderError,
+)
 
-__all__ = ["XHSLoginApi", "XHSNote", "XHSProvider", "XHSProviderError"]
+__all__ = [
+    "XHSAuthenticationRequiredError",
+    "XHSLoginApi",
+    "XHSNote",
+    "XHSProvider",
+    "XHSProviderError",
+]

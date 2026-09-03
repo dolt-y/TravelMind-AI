@@ -1,24 +1,30 @@
 import type {
-  AttractionRequest,
-  AttractionResponse,
-  HotelSearchResponse,
-  WeatherResponse,
+  TripCreateResponse,
+  TripHistoryResponse,
+  TripPlan,
+  TripPlanRequest,
+  TripTaskResponse,
 } from '../types'
 import { http } from './http'
 
-export async function extractAttractions(request: AttractionRequest): Promise<AttractionResponse> {
-  const { data } = await http.post<AttractionResponse>('/xhs/attractions', request)
+export async function createTripPlan(request: TripPlanRequest): Promise<TripCreateResponse> {
+  const { data } = await http.post<TripCreateResponse>('/trip/plan', request)
   return data
 }
 
-export async function getWeather(city: string): Promise<WeatherResponse> {
-  const { data } = await http.get<WeatherResponse>('/weather', { params: { city } })
+export async function getTripStatus(taskId: string): Promise<TripTaskResponse> {
+  const { data } = await http.get<TripTaskResponse>(`/trip/status/${taskId}`)
   return data
 }
 
-export async function searchHotels(city: string): Promise<HotelSearchResponse> {
-  const { data } = await http.get<HotelSearchResponse>('/hotels/search', {
-    params: { city, limit: 6 },
-  })
+/** 读取最近完成的行程摘要，供“我的行程”列表展示。 */
+export async function getTripHistory(limit = 20): Promise<TripHistoryResponse> {
+  const { data } = await http.get<TripHistoryResponse>('/trip/history', { params: { limit } })
+  return data
+}
+
+/** 按计划 ID 恢复完整行程，进入结果页前替换当前查看内容。 */
+export async function getTripPlan(planId: string): Promise<TripPlan> {
+  const { data } = await http.get<TripPlan>(`/trip/plan/${planId}`)
   return data
 }

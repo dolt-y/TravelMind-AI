@@ -8,7 +8,11 @@ from typing import Any
 from loguru import logger
 from pydantic import ValidationError
 
-from app.integrations.xhs import XHSProvider, XHSProviderError
+from app.integrations.xhs import (
+    XHSAuthenticationRequiredError,
+    XHSProvider,
+    XHSProviderError,
+)
 from app.models.poi import POI
 from app.models.xhs import AttractionCandidate, XHSExtraction
 from app.services.poi_service import POIService, POIServiceError
@@ -20,6 +24,10 @@ from .llm_service import LLMService, LLMServiceError, parse_json_payload
 
 class AttractionExtractionError(RuntimeError):
     """景点候选提取失败。"""
+
+
+class AttractionAuthenticationRequiredError(AttractionExtractionError):
+    """系统内容账号未登录，需由管理员恢复后重新提取。"""
 
 
 def _duration(value: Any) -> int:
@@ -204,6 +212,9 @@ def _extract_attractions(
                         "liked_count": note.liked_count or search_note.liked_count,
                     }
                 )
+    except XHSAuthenticationRequiredError as exc:
+        # 保留账号未登录语义，供 REST 层返回稳定业务错误码。
+        raise AttractionAuthenticationRequiredError("小红书系统账号未登录") from exc
     except XHSProviderError as exc:
         raise AttractionExtractionError(str(exc)) from exc
     finally:
