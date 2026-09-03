@@ -3,6 +3,7 @@ name = "travelmind-ai"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
     { name = "wen.yao", email = "2233296011@qq.com" }
 ]
