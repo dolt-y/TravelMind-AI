@@ -26,7 +26,7 @@ from apis.xhs_pc_login_apis import XHSLoginApi  # noqa: E402 - 统一由适配�
 from xhs_utils.xhs_pc import XHSPcAuth  # noqa: E402 - 注入路径后再导入上游鉴权类
 
 
-_RUNTIME_COOKIE = ""
+_RUNTIME_COOKIE: str | None = None
 _RUNTIME_COOKIE_LOCK = Lock()
 
 
@@ -38,14 +38,14 @@ def set_runtime_cookie(cookie: str) -> None:
 
 
 def clear_runtime_cookie() -> None:
-    """清除管理员登录产生的进程内会话，不影响环境配置。"""
+    """清除当前进程会话，并在服务重启前停止回退使用环境 Cookie。"""
     global _RUNTIME_COOKIE
     with _RUNTIME_COOKIE_LOCK:
         _RUNTIME_COOKIE = ""
 
 
-def runtime_cookie() -> str:
-    """读取当前进程会话，供健康检查和 Provider 初始化使用。"""
+def runtime_cookie() -> str | None:
+    """读取运行时会话覆盖值；None 表示尚未覆盖环境配置。"""
     with _RUNTIME_COOKIE_LOCK:
         return _RUNTIME_COOKIE
 
@@ -96,8 +96,12 @@ def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) 
 
 
 def cookie_from_environment() -> str:
-    """优先读取管理员更新的运行会话，否则读取系统环境配置。"""
-    return runtime_cookie() or normalize_cookie(
+    """优先读取管理员设置的运行状态，未操作时再读取系统环境配置。"""
+    runtime_value = runtime_cookie()
+    # NOTE: 空字符串表示管理员已主动退出，不能再次启用环境中的旧 Cookie。
+    if runtime_value is not None:
+        return runtime_value
+    return normalize_cookie(
         os.getenv("TRAVELMIND_XHS_COOKIE") or os.getenv("XHS_COOKIE") or os.getenv("COOKIES")
     )
 

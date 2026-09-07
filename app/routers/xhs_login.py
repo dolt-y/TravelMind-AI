@@ -10,6 +10,7 @@ from app.schemas.xhs_login import (
     XHSLoginMethodsResponse,
     XHSLoginStartResponse,
     XHSLoginStatusResponse,
+    XHSLogoutResponse,
     XHSPhoneLoginStartRequest,
     XHSPhoneLoginVerifyRequest,
 )
@@ -52,6 +53,13 @@ def _start_response(task: XHSLoginTask) -> XHSLoginStartResponse:
 def login_methods() -> XHSLoginMethodsResponse:
     """返回当前支持的三种 PC 登录方式。"""
     return XHSLoginMethodsResponse(methods=["cookie", "qrcode", "phone"])
+
+
+@router.delete("/session", response_model=XHSLogoutResponse)
+def clear_login_session() -> XHSLogoutResponse:
+    """清除当前进程使用的小红书系统账号登录态。"""
+    get_xhs_login_service().logout()
+    return XHSLogoutResponse(success=True, message="小红书登录态已清除")
 
 
 @router.post("/qrcode/start", response_model=XHSLoginStartResponse)

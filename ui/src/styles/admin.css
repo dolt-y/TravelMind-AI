@@ -65,6 +65,12 @@
 .login-status__action { justify-self: start; margin-top: 7px; }
 .login-status--success { border-color: var(--success); background: #edf5ef; }
 .login-status--error, .login-status--expired { border-color: var(--danger); background: #fff0ef; }
+.admin-session-actions { margin-top: 22px; padding-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); }
+.admin-session-actions > div { display: grid; gap: 4px; }
+.admin-session-actions strong { font-size: 12px; }
+.admin-session-actions span { color: var(--muted); font-size: 10px; line-height: 1.55; }
+.button--danger { color: #a63f37; border: 1px solid #e1bbb7; background: #fff7f6; }
+.button--danger:hover { color: #842d27; border-color: #d79c96; background: #fff0ee; }
 
 @media (max-width: 900px) {
   .admin-workspace { grid-template-columns: minmax(280px, .75fr) minmax(0, 1.25fr); }
@@ -93,6 +99,8 @@
   .admin-phone-row { grid-template-columns: 76px minmax(0, 1fr); }
   .admin-code-row { grid-template-columns: 1fr; }
   .admin-code-row .button, .admin-login-form > .button, .admin-access-panel form > .button { width: 100%; }
+  .admin-session-actions { align-items: stretch; flex-direction: column; }
+  .admin-session-actions .button { width: 100%; }
   .admin-login-panel { min-height: 330px; padding-top: 24px; }
 }
 

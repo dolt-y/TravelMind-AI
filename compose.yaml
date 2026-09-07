@@ -1,0 +1,56 @@
+name: travelmind-ai
+
+services:
+  backend:
+    image: travelmind-ai-backend:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    environment:
+      TRAVELMIND_ADMIN_KEY: ${TRAVELMIND_ADMIN_KEY:?请在根目录 .env 中配置管理员密钥}
+      TRAVELMIND_XHS_COOKIE: ${TRAVELMIND_XHS_COOKIE:-}
+      TRAVELMIND_DATA_DIR: /app/data
+      LLM_API_KEY: ${LLM_API_KEY:?请在根目录 .env 中配置 LLM_API_KEY}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL_ID: ${LLM_MODEL_ID:-gpt-4o-mini}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-180}
+      LLM_ENABLE_THINKING: ${LLM_ENABLE_THINKING:-false}
+      AMAP_API_KEY: ${AMAP_API_KEY:?请在根目录 .env 中配置 AMAP_API_KEY}
+      WEATHER_CACHE_TTL_SECONDS: ${WEATHER_CACHE_TTL_SECONDS:-10800}
+      HOTEL_CACHE_TTL_SECONDS: ${HOTEL_CACHE_TTL_SECONDS:-86400}
+      ROUTE_CACHE_TTL_SECONDS: ${ROUTE_CACHE_TTL_SECONDS:-86400}
+    volumes:
+      - travelmind-data:/app/data
+    networks:
+      - travelmind-network
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    image: travelmind-ai-frontend:local
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        VITE_AMAP_JS_KEY: ${VITE_AMAP_JS_KEY:-}
+        VITE_AMAP_SECURITY_CODE: ${VITE_AMAP_SECURITY_CODE:-}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${TRAVELMIND_WEB_PORT:-8080}:80"
+    networks:
+      - travelmind-network
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  travelmind-data:
+    name: travelmind-ai-data
+
+networks:
+  travelmind-network:
+    name: travelmind-ai-network

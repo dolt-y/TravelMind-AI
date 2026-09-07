@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app.integrations.xhs import provider as xhs_provider
 from app.security import ADMIN_KEY_HEADER
 from main import app
 
@@ -52,6 +53,26 @@ class XHSAdminAuthTest(unittest.TestCase):
         response = self.client.get("/api/xhs/login/methods")
 
         self.assertEqual(response.status_code, 404)
+
+    def test_admin_can_clear_runtime_session_and_disable_environment_fallback(self) -> None:
+        """管理员退出后，本进程不能继续使用环境变量中的旧 Cookie。"""
+        with patch.dict(
+            "os.environ",
+            {
+                "TRAVELMIND_ADMIN_KEY": "admin-secret",
+                "TRAVELMIND_XHS_COOKIE": "a1=environment-cookie",
+            },
+            clear=True,
+        ), patch.object(xhs_provider, "_RUNTIME_COOKIE", None):
+            self.assertEqual(xhs_provider.cookie_from_environment(), "a1=environment-cookie")
+            response = self.client.delete(
+                "/api/admin/integrations/xhs/session",
+                headers={ADMIN_KEY_HEADER: "admin-secret"},
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json()["success"])
+            self.assertEqual(xhs_provider.cookie_from_environment(), "")
 
 
 if __name__ == "__main__":

@@ -88,6 +88,7 @@ Map and weather numbers are never inferred by the LLM.
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 20 or newer
 - npm
+- Docker Engine 24 or newer and Docker Compose v2 (for container deployment)
 - A Xiaohongshu system account, AMap developer keys, and an OpenAI-compatible LLM key
 
 ### Backend
@@ -115,6 +116,45 @@ cd ..
 ```
 
 Fill in the root `.env` and `ui/.env` after installation. Never commit real credentials.
+
+### Docker Compose deployment
+
+Container deployment reads all configuration from the root `.env` and exposes the frontend and
+backend through one Nginx entry point:
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Before starting, set at least `TRAVELMIND_ADMIN_KEY`, `LLM_API_KEY`, `AMAP_API_KEY`,
+`VITE_AMAP_JS_KEY`, and `VITE_AMAP_SECURITY_CODE`. `TRAVELMIND_XHS_COOKIE` is optional; an
+administrator can sign in from the system-account page after startup.
+
+| Surface | Default URL |
+| --- | --- |
+| Web application | `http://127.0.0.1:8080` |
+| Trip planner | `http://127.0.0.1:8080/plan` |
+| Trip history | `http://127.0.0.1:8080/library` |
+| System account administration | `http://127.0.0.1:8080/admin/integrations/xhs` |
+| OpenAPI documentation | `http://127.0.0.1:8080/docs` |
+
+Common operations:
+
+```bash
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+`docker compose down` preserves SQLite data in the `travelmind-ai-data` named volume. Use
+`docker compose down -v` only when the trip history, caches, and collected content must also be
+deleted.
+
+`VITE_AMAP_JS_KEY` and `VITE_AMAP_SECURITY_CODE` are frontend build arguments, so changing them
+requires rebuilding the frontend image. Xiaohongshu sessions created through QR-code or phone
+login live only in the backend process. After a backend container restart, the application reloads
+`TRAVELMIND_XHS_COOKIE` from `.env`; without it, an administrator must sign in again.
 
 ## Usage
 
@@ -294,6 +334,7 @@ Every endpoint below requires the `X-TravelMind-Admin-Key` header:
 | `POST` | `/api/admin/integrations/xhs/phone/start` | Send a phone verification code |
 | `POST` | `/api/admin/integrations/xhs/phone/verify` | Verify the SMS code |
 | `POST` | `/api/admin/integrations/xhs/cookie` | Validate and replace the runtime cookie |
+| `DELETE` | `/api/admin/integrations/xhs/session` | Clear the current process Xiaohongshu session |
 
 ## Configuration
 
@@ -357,8 +398,13 @@ TravelMind-AI/
 ├── data/                   # Local runtime data
 ├── tests/                  # unittest test suite
 ├── ui/                     # React / Vite Web application
+│   ├── Dockerfile          # Frontend build and Nginx runtime image
+│   └── nginx.conf          # SPA, API, and WebSocket reverse proxy
 ├── vendor/spider_xhs/      # Xiaohongshu PC client runtime
+├── .dockerignore           # Backend image build exclusions
 ├── .env.example            # Backend configuration template
+├── compose.yaml            # Services, network, and persistent volume
+├── Dockerfile              # FastAPI and signing runtime image
 ├── LICENSE                 # MIT License
 ├── main.py                 # FastAPI entry point
 ├── pyproject.toml          # Python metadata and dependencies

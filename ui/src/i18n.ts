@@ -35,7 +35,8 @@ const zh = {
     account: { eyebrow: '账号维护', title: '小红书系统账号', copy: '选择一种方式更新当前服务使用的内容账号会话。普通用户不会看到或接触这些登录信息。' },
     login: { method: '登录方式', qrcode: '二维码', phone: '手机号', qrAlt: '小红书系统账号登录二维码', qrReady: '生成二维码后使用小红书扫码', qrStart: '生成二维码', qrRestart: '重新生成', zone: '区号', phoneNumber: '手机号码', code: '验证码', codePlaceholder: '输入短信验证码', sendCode: '发送验证码', verify: '验证并登录', cookieLabel: 'Cookie', cookieNote: 'Cookie 只会提交给当前 TravelMind 服务，不会保存在浏览器中。', cookieSubmit: '验证 Cookie', currentUser: '当前账号：{{name}}', continuePlanning: '返回并重新规划' },
     states: { preparing: '正在准备', waiting_scan: '等待扫码', waiting_confirm: '等待手机确认', code_sent: '验证码已发送', authenticating: '正在验证', success: '系统账号已更新', expired: '登录已过期', error: '登录失败' },
-    errors: { access: '管理员验证失败', request: '账号维护请求失败', qrcode: '二维码加载失败，请重新生成' },
+    logout: { title: '清除登录态', copy: '清除后，旅行内容检索将暂停，直到管理员重新登录。', action: '清除登录态', confirm: '确定清除当前小红书系统账号的登录态吗？', success: '小红书登录态已清除' },
+    errors: { access: '管理员验证失败', request: '账号维护请求失败', qrcode: '二维码加载失败，请重新生成', logout: '登录态清理失败，请重试。' },
   },
   notFound: { copy: '没有找到这个页面。', home: '返回首页' },
 }
@@ -74,7 +75,8 @@ const en = {
     account: { eyebrow: 'ACCOUNT MAINTENANCE', title: 'Xiaohongshu system account', copy: 'Choose a method to update the content account session used by this service. Regular users never see or handle these credentials.' },
     login: { method: 'Login method', qrcode: 'QR code', phone: 'Phone', qrAlt: 'Xiaohongshu system account login QR code', qrReady: 'Generate a code and scan it with Xiaohongshu', qrStart: 'Generate QR code', qrRestart: 'Generate again', zone: 'Code', phoneNumber: 'Phone number', code: 'Verification code', codePlaceholder: 'Enter SMS code', sendCode: 'Send code', verify: 'Verify and log in', cookieLabel: 'Cookie', cookieNote: 'The Cookie is submitted only to this TravelMind service and is not stored in the browser.', cookieSubmit: 'Verify Cookie', currentUser: 'Current account: {{name}}', continuePlanning: 'Return and retry plan' },
     states: { preparing: 'Preparing', waiting_scan: 'Waiting for scan', waiting_confirm: 'Waiting for phone confirmation', code_sent: 'Code sent', authenticating: 'Authenticating', success: 'System account updated', expired: 'Login expired', error: 'Login failed' },
-    errors: { access: 'Administrator verification failed', request: 'Account maintenance request failed', qrcode: 'Could not load the QR code. Generate a new one.' },
+    logout: { title: 'Clear session', copy: 'Travel-content retrieval will pause until an administrator signs in again.', action: 'Clear session', confirm: 'Clear the current Xiaohongshu system-account session?', success: 'Xiaohongshu session cleared' },
+    errors: { access: 'Administrator verification failed', request: 'Account maintenance request failed', qrcode: 'Could not load the QR code. Generate a new one.', logout: 'The session could not be cleared. Try again.' },
   },
   notFound: { copy: 'This page could not be found.', home: 'Back home' },
 }
@@ -113,7 +115,8 @@ const ja = {
     account: { eyebrow: 'アカウント管理', title: '小紅書システムアカウント', copy: 'このサービスが使用するコンテンツアカウントのセッションを更新します。一般ユーザーにはログイン情報を表示しません。' },
     login: { method: 'ログイン方法', qrcode: 'QR コード', phone: '電話番号', qrAlt: '小紅書システムアカウントのログイン QR コード', qrReady: 'QR コードを生成して小紅書でスキャン', qrStart: 'QR コードを生成', qrRestart: '再生成', zone: '国番号', phoneNumber: '電話番号', code: '確認コード', codePlaceholder: 'SMS コードを入力', sendCode: 'コードを送信', verify: '確認してログイン', cookieLabel: 'Cookie', cookieNote: 'Cookie は現在の TravelMind サービスにのみ送信され、ブラウザには保存されません。', cookieSubmit: 'Cookie を確認', currentUser: '現在のアカウント：{{name}}', continuePlanning: '戻って再計画する' },
     states: { preparing: '準備中', waiting_scan: 'スキャン待ち', waiting_confirm: 'スマートフォンの確認待ち', code_sent: 'コード送信済み', authenticating: '確認中', success: 'システムアカウント更新済み', expired: 'ログイン期限切れ', error: 'ログイン失敗' },
-    errors: { access: '管理者認証に失敗しました', request: 'アカウント管理のリクエストに失敗しました', qrcode: 'QR コードを読み込めません。再生成してください。' },
+    logout: { title: 'ログイン状態を消去', copy: '管理者が再ログインするまで旅行コンテンツの検索は停止します。', action: 'ログイン状態を消去', confirm: '現在の小紅書システムアカウントのログイン状態を消去しますか？', success: '小紅書のログイン状態を消去しました' },
+    errors: { access: '管理者認証に失敗しました', request: 'アカウント管理のリクエストに失敗しました', qrcode: 'QR コードを読み込めません。再生成してください。', logout: 'ログイン状態を消去できませんでした。もう一度お試しください。' },
   },
   notFound: { copy: 'ページが見つかりません。', home: 'ホームへ戻る' },
 }

@@ -15,6 +15,7 @@ from app.integrations.xhs.provider import (
     XHSLoginApi,
     XHSProvider,
     XHSProviderError,
+    clear_runtime_cookie,
     normalize_cookie,
     set_runtime_cookie,
 )
@@ -110,10 +111,28 @@ class XHSLoginService:
         except Exception as exc:
             raise XHSProviderError(f"Cookie 验证失败: {exc}") from exc
         task = self._new_task("cookie")
-        task.state = "success"
-        task.message = "Cookie 登录成功"
-        set_runtime_cookie(normalized)
+        with self._lock:
+            if self._tasks.get(task.login_id) is not task:
+                raise XHSProviderError("Cookie 登录任务已取消")
+            set_runtime_cookie(normalized)
+            task.state = "success"
+            task.message = "Cookie 登录成功"
         return task
+
+    def logout(self) -> None:
+        """清除系统内容账号会话，并终止当前进程中的登录任务。"""
+        with self._lock:
+            tasks = list(self._tasks.values())
+            self._tasks.clear()
+        clear_runtime_cookie()
+        for task in tasks:
+            if task.login is not None:
+                try:
+                    task.login.close()
+                except Exception:
+                    logger.warning("清理小红书登录任务客户端失败，已继续撤销系统登录态")
+            task.login = None
+            task.cookies = None
 
     def status(self, login_id: str) -> XHSLoginTask:
         """读取登录任务状态，过期任务按不存在处理。"""
@@ -153,14 +172,17 @@ class XHSLoginService:
 
     def _finish(self, task: XHSLoginTask, login: Any, cookies: dict[str, str], user: dict[str, Any]) -> None:
         """只保存运行所需会话，任务本身不继续持有完整 Cookie。"""
-        set_runtime_cookie(login.cookies_to_str(cookies))
         nickname = str(user.get("nickname") or "")
         with self._lock:
-            task.state = "success"
-            task.message = "登录成功"
-            task.user_nickname = nickname or None
-            task.login = None
-            task.cookies = None
+            # NOTE: 退出操作会移除任务；已移除的后台任务不得重新建立系统登录态。
+            active = self._tasks.get(task.login_id) is task
+            if active:
+                set_runtime_cookie(login.cookies_to_str(cookies))
+                task.state = "success"
+                task.message = "登录成功"
+                task.user_nickname = nickname or None
+                task.login = None
+                task.cookies = None
         login.close()
 
     def _run_qrcode(self, login_id: str) -> None:

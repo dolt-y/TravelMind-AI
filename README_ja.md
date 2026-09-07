@@ -84,6 +84,7 @@ POI、天気、ホテル、ルート情報を補完します。その後、LLM �
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 20 以上
 - npm
+- Docker Engine 24 以上と Docker Compose v2（コンテナで実行する場合）
 - 小紅書システムアカウント、高徳開発者 Key、OpenAI-compatible LLM Key
 
 ### バックエンド
@@ -112,6 +113,45 @@ cd ..
 
 インストール後、ルートの `.env` と `ui/.env` を設定します。実際の認証情報を Git に
 コミットしないでください。
+
+### Docker Compose デプロイ
+
+コンテナ環境ではルートの `.env` だけを設定し、フロントエンドとバックエンドを 1 つの
+Nginx エントリーポイントから利用します。
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+起動前に `TRAVELMIND_ADMIN_KEY`、`LLM_API_KEY`、`AMAP_API_KEY`、`VITE_AMAP_JS_KEY`、
+`VITE_AMAP_SECURITY_CODE` を設定してください。`TRAVELMIND_XHS_COOKIE` は任意で、起動後に
+システムアカウント管理画面からログインすることもできます。
+
+| 画面 | 既定 URL |
+| --- | --- |
+| Web アプリ | `http://127.0.0.1:8080` |
+| 旅行計画 | `http://127.0.0.1:8080/plan` |
+| 旅行履歴 | `http://127.0.0.1:8080/library` |
+| システムアカウント管理 | `http://127.0.0.1:8080/admin/integrations/xhs` |
+| OpenAPI | `http://127.0.0.1:8080/docs` |
+
+主な運用コマンド：
+
+```bash
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+`docker compose down` を実行しても、SQLite データを保存する名前付きボリューム
+`travelmind-ai-data` は残ります。旅行履歴、キャッシュ、取得済みコンテンツも削除する場合だけ
+`docker compose down -v` を使用してください。
+
+`VITE_AMAP_JS_KEY` と `VITE_AMAP_SECURITY_CODE` はフロントエンドのビルド引数です。変更後は
+フロントエンドイメージを再ビルドしてください。QR コードまたは電話番号で作成した小紅書の
+ログイン状態はバックエンドプロセス内だけに保存されます。バックエンドコンテナ再起動後は
+`.env` の `TRAVELMIND_XHS_COOKIE` を再読込し、未設定の場合は管理者の再ログインが必要です。
 
 ## 使い方
 
@@ -285,6 +325,7 @@ REST schema とドメイン model は分離されています。Provider のレ�
 | `POST` | `/api/admin/integrations/xhs/phone/start` | SMS コードを送信 |
 | `POST` | `/api/admin/integrations/xhs/phone/verify` | SMS コードを検証 |
 | `POST` | `/api/admin/integrations/xhs/cookie` | Cookie を検証して更新 |
+| `DELETE` | `/api/admin/integrations/xhs/session` | 現在のプロセスの小紅書ログイン状態を消去 |
 
 ## 設定
 
@@ -344,8 +385,13 @@ TravelMind-AI/
 ├── data/                   # ローカル実行データ
 ├── tests/                  # unittest テスト
 ├── ui/                     # React / Vite Web アプリ
+│   ├── Dockerfile          # フロントエンドビルドと Nginx 実行イメージ
+│   └── nginx.conf          # SPA、API、WebSocket のリバースプロキシ
 ├── vendor/spider_xhs/      # 小紅書 PC クライアントランタイム
+├── .dockerignore           # バックエンドイメージの除外設定
 ├── .env.example            # バックエンド設定テンプレート
+├── compose.yaml            # サービス、ネットワーク、永続ボリューム
+├── Dockerfile              # FastAPI と署名ランタイムのイメージ
 ├── LICENSE                 # MIT ライセンス
 ├── main.py                 # FastAPI エントリーポイント
 ├── pyproject.toml          # Python メタデータと依存関係

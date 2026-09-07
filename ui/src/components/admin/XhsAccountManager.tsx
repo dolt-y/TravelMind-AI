@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Cookie, LoaderCircle, Phone, QrCode, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Cookie, LoaderCircle, LogOut, Phone, QrCode, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
+  clearXhsAdminSession,
   getXhsAdminLoginStatus,
   getXhsAdminQrImage,
   loginXhsAdminWithCookie,
@@ -39,6 +40,7 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
   const [cookie, setCookie] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   // 登录状态由后台任务推进，页面只在任务有效期间轮询。
   useEffect(() => {
@@ -96,7 +98,28 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
     setTask(null)
     setCode('')
     setError(null)
+    setNotice(null)
     setBusy(false)
+  }
+
+  async function clearSession() {
+    if (!window.confirm(t('adminXhs.logout.confirm'))) return
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const response = await clearXhsAdminSession(adminKey)
+      if (qrImageUrl) URL.revokeObjectURL(qrImageUrl)
+      setQrImageUrl(null)
+      setTask(null)
+      setCode('')
+      setCookie('')
+      setNotice(response.message || t('adminXhs.logout.success'))
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : t('adminXhs.errors.logout'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function startQrCode() {
@@ -227,7 +250,14 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
             )}
           </div>
         )}
+        {notice && <div className="login-status login-status--success" role="status"><strong>{notice}</strong></div>}
         {error && <div className="inline-alert inline-alert--error" role="alert">{error}</div>}
+      </div>
+      <div className="admin-session-actions">
+        <div><strong>{t('adminXhs.logout.title')}</strong><span>{t('adminXhs.logout.copy')}</span></div>
+        <button className="button button--danger" type="button" onClick={() => void clearSession()} disabled={busy}>
+          {busy ? <LoaderCircle className="spin" size={17} /> : <LogOut size={17} />}{t('adminXhs.logout.action')}
+        </button>
       </div>
     </section>
   )

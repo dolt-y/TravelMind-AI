@@ -188,6 +188,11 @@ export interface XHSLoginMethodsResponse {
   methods: XHSLoginMethod[]
 }
 
+export interface XHSLogoutResponse {
+  success: boolean
+  message: string
+}
+
 export interface XHSLoginStartResponse {
   login_id: string
   method: XHSLoginMethod

@@ -2,6 +2,7 @@ import type {
   XHSLoginMethodsResponse,
   XHSLoginStartResponse,
   XHSLoginStatusResponse,
+  XHSLogoutResponse,
 } from '../types'
 import { http } from './http'
 
@@ -15,6 +16,14 @@ function adminHeaders(adminKey: string) {
 /** 验证管理密钥，并返回当前系统账号支持的维护方式。 */
 export async function getXhsAdminMethods(adminKey: string): Promise<XHSLoginMethodsResponse> {
   const { data } = await http.get<XHSLoginMethodsResponse>(`${ADMIN_XHS_PATH}/methods`, {
+    headers: adminHeaders(adminKey),
+  })
+  return data
+}
+
+/** 清除服务当前使用的系统内容账号会话，并使进行中的登录任务失效。 */
+export async function clearXhsAdminSession(adminKey: string): Promise<XHSLogoutResponse> {
+  const { data } = await http.delete<XHSLogoutResponse>(`${ADMIN_XHS_PATH}/session`, {
     headers: adminHeaders(adminKey),
   })
   return data

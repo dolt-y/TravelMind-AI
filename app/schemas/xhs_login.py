@@ -26,6 +26,13 @@ class XHSLoginMethodsResponse(BaseModel):
     methods: list[LoginMethod]
 
 
+class XHSLogoutResponse(BaseModel):
+    """返回系统内容账号登录态的清理结果。"""
+
+    success: bool
+    message: str
+
+
 class XHSLoginStartResponse(BaseModel):
     """返回异步登录任务标识，不返回登录凭证。"""
 

@@ -83,6 +83,7 @@ LLM 推测生成。
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 20 或更高版本
 - npm
+- Docker Engine 24 或更高版本与 Docker Compose v2（使用容器部署时）
 - 可用的小红书系统账号、高德开发者 Key 和 OpenAI-compatible LLM Key
 
 ### 安装后端依赖
@@ -110,6 +111,43 @@ cd ..
 ```
 
 完成安装后，分别填写根目录 `.env` 和 `ui/.env`。不要将真实密钥提交到 Git。
+
+### Docker Compose 部署
+
+容器部署只需要配置根目录 `.env`，前端和后端统一通过 Nginx 入口访问：
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+启动前至少填写 `TRAVELMIND_ADMIN_KEY`、`LLM_API_KEY`、`AMAP_API_KEY`、
+`VITE_AMAP_JS_KEY` 和 `VITE_AMAP_SECURITY_CODE`。`TRAVELMIND_XHS_COOKIE` 可选；
+也可以启动后在系统账号管理页完成登录。
+
+| 服务 | 默认地址 |
+| --- | --- |
+| Web 应用 | `http://127.0.0.1:8080` |
+| 行程规划 | `http://127.0.0.1:8080/plan` |
+| 历史行程 | `http://127.0.0.1:8080/library` |
+| 系统账号管理 | `http://127.0.0.1:8080/admin/integrations/xhs` |
+| OpenAPI 文档 | `http://127.0.0.1:8080/docs` |
+
+常用运维命令：
+
+```bash
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+`docker compose down` 不会删除 SQLite 数据；数据库保存在命名卷
+`travelmind-ai-data` 中。只有明确需要同时清空行程、缓存和内容记录时，才使用
+`docker compose down -v`。
+
+`VITE_AMAP_JS_KEY` 和 `VITE_AMAP_SECURITY_CODE` 是前端构建参数，修改后需要重新构建
+前端镜像。管理员通过二维码或手机号获得的小红书登录态仅保存在后端进程；后端容器重启后，
+会重新读取 `.env` 中的 `TRAVELMIND_XHS_COOKIE`，未配置时需要管理员重新登录。
 
 ## 使用
 
@@ -317,6 +355,7 @@ REST schema 与领域 model 保持分离。供应商原始结构必须先转换�
 | `POST` | `/api/admin/integrations/xhs/phone/start` | 发送手机号验证码 |
 | `POST` | `/api/admin/integrations/xhs/phone/verify` | 验证短信验证码 |
 | `POST` | `/api/admin/integrations/xhs/cookie` | 验证并更新 Cookie |
+| `DELETE` | `/api/admin/integrations/xhs/session` | 清除当前进程的小红书登录态 |
 
 ## 配置
 
@@ -385,8 +424,13 @@ TravelMind-AI/
 ├── data/                   # 本地运行数据，不提交数据库文件
 ├── tests/                  # unittest 自动化测试
 ├── ui/                     # React / Vite Web 应用
+│   ├── Dockerfile          # 前端构建与 Nginx 运行镜像
+│   └── nginx.conf          # SPA、API 与 WebSocket 反向代理
 ├── vendor/spider_xhs/      # 小红书 PC 客户端运行时
+├── .dockerignore           # 后端镜像构建忽略规则
 ├── .env.example            # 后端配置模板
+├── compose.yaml            # 前后端编排、网络与数据卷
+├── Dockerfile              # FastAPI 与小红书签名运行镜像
 ├── LICENSE                 # MIT 许可证
 ├── main.py                 # FastAPI 入口
 ├── pyproject.toml          # Python 项目与依赖
