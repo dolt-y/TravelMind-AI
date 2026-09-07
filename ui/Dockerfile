@@ -1,4 +1,4 @@
-FROM node:20.18.0-alpine AS build
+FROM node:20.18.0-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -9,6 +9,7 @@ COPY . .
 
 ARG VITE_AMAP_JS_KEY=""
 ARG VITE_AMAP_SECURITY_CODE=""
+
 ENV VITE_AMAP_JS_KEY=${VITE_AMAP_JS_KEY} \
     VITE_AMAP_SECURITY_CODE=${VITE_AMAP_SECURITY_CODE}
 
