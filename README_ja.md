@@ -130,11 +130,11 @@ docker compose up -d --build
 
 | 画面 | 既定 URL |
 | --- | --- |
-| Web アプリ | `http://127.0.0.1:8080` |
-| 旅行計画 | `http://127.0.0.1:8080/plan` |
-| 旅行履歴 | `http://127.0.0.1:8080/library` |
-| システムアカウント管理 | `http://127.0.0.1:8080/admin/integrations/xhs` |
-| OpenAPI | `http://127.0.0.1:8080/docs` |
+| Web アプリ | `http://127.0.0.1:8081` |
+| 旅行計画 | `http://127.0.0.1:8081/plan` |
+| 旅行履歴 | `http://127.0.0.1:8081/library` |
+| システムアカウント管理 | `http://127.0.0.1:8081/admin/integrations/xhs` |
+| OpenAPI | `http://127.0.0.1:8081/docs` |
 
 主な運用コマンド：
 

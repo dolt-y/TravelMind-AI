@@ -127,11 +127,11 @@ docker compose up -d --build
 
 | 服务 | 默认地址 |
 | --- | --- |
-| Web 应用 | `http://127.0.0.1:8080` |
-| 行程规划 | `http://127.0.0.1:8080/plan` |
-| 历史行程 | `http://127.0.0.1:8080/library` |
-| 系统账号管理 | `http://127.0.0.1:8080/admin/integrations/xhs` |
-| OpenAPI 文档 | `http://127.0.0.1:8080/docs` |
+| Web 应用 | `http://127.0.0.1:8081` |
+| 行程规划 | `http://127.0.0.1:8081/plan` |
+| 历史行程 | `http://127.0.0.1:8081/library` |
+| 系统账号管理 | `http://127.0.0.1:8081/admin/integrations/xhs` |
+| OpenAPI 文档 | `http://127.0.0.1:8081/docs` |
 
 常用运维命令：
 

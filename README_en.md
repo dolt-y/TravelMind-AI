@@ -133,11 +133,11 @@ administrator can sign in from the system-account page after startup.
 
 | Surface | Default URL |
 | --- | --- |
-| Web application | `http://127.0.0.1:8080` |
-| Trip planner | `http://127.0.0.1:8080/plan` |
-| Trip history | `http://127.0.0.1:8080/library` |
-| System account administration | `http://127.0.0.1:8080/admin/integrations/xhs` |
-| OpenAPI documentation | `http://127.0.0.1:8080/docs` |
+| Web application | `http://127.0.0.1:8081` |
+| Trip planner | `http://127.0.0.1:8081/plan` |
+| Trip history | `http://127.0.0.1:8081/library` |
+| System account administration | `http://127.0.0.1:8081/admin/integrations/xhs` |
+| OpenAPI documentation | `http://127.0.0.1:8081/docs` |
 
 Common operations:
 
