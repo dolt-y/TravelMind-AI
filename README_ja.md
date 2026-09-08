@@ -82,7 +82,7 @@ POI、天気、ホテル、ルート情報を補完します。その後、LLM �
 
 - Python 3.12 以上
 - [uv](https://docs.astral.sh/uv/)
-- Node.js 20 以上
+- Node.js 20.19 以上（22.19 推奨）
 - npm
 - Docker Engine 24 以上と Docker Compose v2（コンテナで実行する場合）
 - 小紅書システムアカウント、高徳開発者 Key、OpenAI-compatible LLM Key

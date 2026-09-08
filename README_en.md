@@ -86,7 +86,7 @@ Map and weather numbers are never inferred by the LLM.
 
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
-- Node.js 20 or newer
+- Node.js 20.19 or newer (22.19 recommended)
 - npm
 - Docker Engine 24 or newer and Docker Compose v2 (for container deployment)
 - A Xiaohongshu system account, AMap developer keys, and an OpenAI-compatible LLM key

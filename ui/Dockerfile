@@ -1,11 +1,10 @@
-FROM node:20.18.0-bookworm-slim AS build
+FROM node:22.19.0-bookworm-slim AS build
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
 RUN npm ci --include=optional
-RUN test -f node_modules/@rolldown/binding-linux-x64-gnu/rolldown-binding.linux-x64-gnu.node
 
 COPY . .
 

@@ -81,7 +81,7 @@ LLM 推测生成。
 
 - Python 3.12 或更高版本
 - [uv](https://docs.astral.sh/uv/)
-- Node.js 20 或更高版本
+- Node.js 20.19 或更高版本（推荐 22.19）
 - npm
 - Docker Engine 24 或更高版本与 Docker Compose v2（使用容器部署时）
 - 可用的小红书系统账号、高德开发者 Key 和 OpenAI-compatible LLM Key
