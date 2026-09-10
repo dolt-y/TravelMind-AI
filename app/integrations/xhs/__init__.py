@@ -6,7 +6,6 @@ from .provider import (
     XHSNote,
     XHSProvider,
     XHSProviderError,
-    clear_runtime_cookie,
 )
 
 __all__ = [
@@ -15,5 +14,4 @@ __all__ = [
     "XHSNote",
     "XHSProvider",
     "XHSProviderError",
-    "clear_runtime_cookie",
 ]

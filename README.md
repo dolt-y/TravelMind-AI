@@ -64,12 +64,13 @@ LLM 推测生成。
 - 后台规划任务、轮询状态、WebSocket 状态订阅和失败错误码。
 - 完整计划、每日安排和路线段持久化，支持历史列表与计划恢复。
 - React 响应式前端、中文/英文/日文界面、高德地图和 ECharts 预算图。
-- 小红书系统账号的 Cookie、二维码和手机号三种管理员登录方式。
-- 未登录时返回稳定认证错误，并引导前端进入管理员维护页面。
+- 小红书 Cookie、二维码和手机号三种登录方式，会话按浏览器加密隔离。
+- 未登录时返回稳定认证错误，并引导当前浏览器进入账户设置页面。
 
 ### 能力边界
 
-- 普通用户不需要提交个人小红书账号，内容账号由系统管理员维护。
+- 小红书登录态以加密 HttpOnly Cookie 保存在客户端，不写入服务端数据库或进程全局变量。
+- 登录接口面向访问者开放，每个浏览器独立建立小红书会话；项目仍未包含完整的普通用户账号与授权体系。
 - 前端规划表单当前面向单城市；多城市能力可通过 REST API 使用。
 - 酒店价格、景点评分等供应商未返回的字段保持为空，不由模型补造。
 - 预算只汇总当前已知的餐饮、住宿、景点和交通估算，不等同于最终消费。
@@ -84,7 +85,7 @@ LLM 推测生成。
 - Node.js 20.19 或更高版本（推荐 22.19）
 - npm
 - Docker Engine 24 或更高版本与 Docker Compose v2（使用容器部署时）
-- 可用的小红书系统账号、高德开发者 Key 和 OpenAI-compatible LLM Key
+- 可用的小红书账号、高德开发者 Key 和 OpenAI-compatible LLM Key
 
 ### 安装后端依赖
 
@@ -121,16 +122,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-启动前至少填写 `TRAVELMIND_ADMIN_KEY`、`LLM_API_KEY`、`AMAP_API_KEY`、
-`VITE_AMAP_JS_KEY` 和 `VITE_AMAP_SECURITY_CODE`。`TRAVELMIND_XHS_COOKIE` 可选；
-也可以启动后在系统账号管理页完成登录。
+启动前至少填写 `TRAVELMIND_SESSION_SECRET`、`LLM_API_KEY`、
+`AMAP_API_KEY`、`VITE_AMAP_JS_KEY` 和 `VITE_AMAP_SECURITY_CODE`。小红书 Cookie 不再写入
+`.env`，启动后由各浏览器在账号管理页独立完成登录。
 
 | 服务 | 默认地址 |
 | --- | --- |
 | Web 应用 | `http://127.0.0.1:8081` |
 | 行程规划 | `http://127.0.0.1:8081/plan` |
 | 历史行程 | `http://127.0.0.1:8081/library` |
-| 系统账号管理 | `http://127.0.0.1:8081/admin/integrations/xhs` |
+| 账户设置 | `http://127.0.0.1:8081/settings` |
 | OpenAPI 文档 | `http://127.0.0.1:8081/docs` |
 
 常用运维命令：
@@ -146,8 +147,9 @@ docker compose down
 `docker compose down -v`。
 
 `VITE_AMAP_JS_KEY` 和 `VITE_AMAP_SECURITY_CODE` 是前端构建参数，修改后需要重新构建
-前端镜像。管理员通过二维码或手机号获得的小红书登录态仅保存在后端进程；后端容器重启后，
-会重新读取 `.env` 中的 `TRAVELMIND_XHS_COOKIE`，未配置时需要管理员重新登录。
+前端镜像。`TRAVELMIND_SESSION_SECRET` 必须在容器重启和多实例之间保持一致，否则浏览器中
+已有的加密会话会失效。二维码和短信登录挑战仍是 5 分钟的进程内临时状态，因此当前镜像使用
+单个 Uvicorn Worker；登录成功后的会话只保存在对应浏览器中。
 
 ## 使用
 
@@ -173,7 +175,7 @@ npm run dev
 | Web 应用 | `http://127.0.0.1:5173` |
 | 行程规划 | `http://127.0.0.1:5173/plan` |
 | 历史行程 | `http://127.0.0.1:5173/library` |
-| 系统账号管理 | `http://127.0.0.1:5173/admin/integrations/xhs` |
+| 账户设置 | `http://127.0.0.1:5173/settings` |
 | OpenAPI 文档 | `http://127.0.0.1:8000/docs` |
 
 如果端口已被占用，Vite 会选择下一个可用端口，请以终端输出为准。
@@ -222,6 +224,9 @@ curl http://127.0.0.1:8000/api/trip/status/9fd32f0d4f38464d8ca7100af700f21a
 任务状态依次为 `submitted`、`processing`、`completed` 或 `failed`。成功响应中的
 `result` 是完整行程；失败响应包含稳定的 `error_code` 和面向客户端的错误说明。
 
+完整规划和实时小红书接口要求当前客户端先完成登录。Web 页面会自动携带 HttpOnly Cookie；
+命令行客户端需要在登录请求中保存响应 Cookie，并在后续请求中使用同一个 Cookie Jar。
+
 多城市请求使用 `cities` 替代 `city`，各城市天数之和必须等于起止日期覆盖的自然日数量：
 
 ```json
@@ -262,9 +267,11 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    UI["React / Vite Web"] --> API["FastAPI REST / WebSocket"]
+    UI["React / Vite Web"] --> SESSION["浏览器加密 HttpOnly 会话"]
+    SESSION -->|"随当前请求携带"| API["FastAPI REST / WebSocket"]
     API --> ORCH["TripPlannerService"]
-    ORCH --> XHS["Spider_XHS 适配器"]
+    API -->|"请求级凭证"| XHS["Spider_XHS 适配器"]
+    ORCH --> XHS
     ORCH --> LLM["OpenAI-compatible LLM"]
     ORCH --> POI["高德 POI"]
     ORCH --> WEATHER["天气服务"]
@@ -278,6 +285,9 @@ flowchart LR
     ROUTE --> DB
     ORCH --> DB
 ```
+
+小红书原始 Cookie 仅在登录验证和当前业务请求中短暂出现。浏览器只保存服务端签发的认证密文，
+服务端不保存用户间共享的 Cookie；二维码和短信挑战仅保留五分钟非持久化任务状态。
 
 ### 分层约束
 
@@ -342,20 +352,22 @@ REST schema 与领域 model 保持分离。供应商原始结构必须先转换�
 
 路线接口只负责已确定起终点之间的距离、耗时和导航步骤；景点访问顺序由行程规划器决定。
 
-### 系统账号管理
+### 小红书客户端登录
 
-以下接口都要求请求头 `X-TravelMind-Admin-Key`：
+这些接口面向访问者开放，不要求管理密钥。登录成功后仅向当前浏览器签发加密的 HttpOnly
+Cookie；二维码和手机号登录任务 5 分钟后失效。单个客户端每 60 秒最多创建 8 个登录任务，
+服务端同时最多保留 12 个任务。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| `GET` | `/api/admin/integrations/xhs/methods` | 获取可用登录方式 |
-| `POST` | `/api/admin/integrations/xhs/qrcode/start` | 创建二维码登录任务 |
-| `GET` | `/api/admin/integrations/xhs/{login_id}/qrcode` | 获取登录二维码 |
-| `GET` | `/api/admin/integrations/xhs/{login_id}/status` | 查询登录状态 |
-| `POST` | `/api/admin/integrations/xhs/phone/start` | 发送手机号验证码 |
-| `POST` | `/api/admin/integrations/xhs/phone/verify` | 验证短信验证码 |
-| `POST` | `/api/admin/integrations/xhs/cookie` | 验证并更新 Cookie |
-| `DELETE` | `/api/admin/integrations/xhs/session` | 清除当前进程的小红书登录态 |
+| `GET` | `/api/xhs/login/methods` | 获取可用登录方式 |
+| `POST` | `/api/xhs/login/qrcode/start` | 创建二维码登录任务 |
+| `GET` | `/api/xhs/login/{login_id}/qrcode` | 获取登录二维码 |
+| `GET` | `/api/xhs/login/{login_id}/status` | 查询登录状态并领取登录结果 |
+| `POST` | `/api/xhs/login/phone/start` | 发送手机号验证码 |
+| `POST` | `/api/xhs/login/phone/verify` | 验证短信验证码 |
+| `POST` | `/api/xhs/login/cookie` | 验证 Cookie 并建立浏览器会话 |
+| `DELETE` | `/api/xhs/login/session` | 清除当前浏览器的小红书登录态 |
 
 ## 配置
 
@@ -363,8 +375,7 @@ REST schema 与领域 model 保持分离。供应商原始结构必须先转换�
 
 | 变量 | 必需 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| `TRAVELMIND_ADMIN_KEY` | 管理页必需 | 无 | 保护系统账号管理接口的独立密钥 |
-| `TRAVELMIND_XHS_COOKIE` | 建议 | 无 | 服务启动时恢复小红书系统账号会话 |
+| `TRAVELMIND_SESSION_SECRET` | 是 | 无 | 加密浏览器小红书会话，至少 32 个随机字符 |
 | `LLM_API_KEY` | 是 | 无 | OpenAI-compatible 服务密钥 |
 | `LLM_BASE_URL` | 否 | `https://api.openai.com/v1` | Chat Completions 服务地址 |
 | `LLM_MODEL_ID` | 否 | `gpt-4o-mini` | 景点提取和行程编排模型 |
@@ -376,8 +387,7 @@ REST schema 与领域 model 保持分离。供应商原始结构必须先转换�
 | `HOTEL_CACHE_TTL_SECONDS` | 否 | `86400` | 酒店缓存有效期 |
 | `ROUTE_CACHE_TTL_SECONDS` | 否 | `86400` | 路线缓存有效期 |
 
-兼容变量：小红书 Cookie 还可读取 `XHS_COOKIE`、`COOKIES`；LLM 还可读取
-`OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`；高德后端还可读取
+兼容变量：LLM 还可读取 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`；高德后端还可读取
 `AMAP_MAPS_API_KEY`、`VITE_AMAP_WEB_KEY`。新部署建议使用表格中的主变量。
 
 ### 前端 `ui/.env`
@@ -409,6 +419,7 @@ data/travelmind.db
 
 前端 Zustand 只在浏览器中缓存最近查看的行程和用户输入。历史行程页面始终通过
 `/api/trip/history` 和 `/api/trip/plan/{plan_id}` 读取 SQLite，不以浏览器缓存代替数据库。
+小红书登录态不写入 SQLite；服务端只在单次请求或正在执行的规划任务中短暂解密使用。
 
 ## 项目结构
 
@@ -420,7 +431,8 @@ TravelMind-AI/
 │   ├── routers/            # REST 与 WebSocket 路由
 │   ├── schemas/            # 独立 API 请求/响应模型
 │   ├── services/           # 业务服务与完整规划编排
-│   └── storage/            # SQLite 仓储和缓存
+│   ├── storage/            # SQLite 仓储和缓存
+│   └── xhs_session.py      # 浏览器会话加密、校验与 Cookie 交付
 ├── data/                   # 本地运行数据，不提交数据库文件
 ├── tests/                  # unittest 自动化测试
 ├── ui/                     # React / Vite Web 应用
@@ -464,13 +476,14 @@ git diff --check
 
 ## 安全说明
 
-- `.env`、数据库文件、Cookie 和 API Key 不得提交到版本库。
-- 普通用户页面不接触小红书登录材料；系统账号只由受保护的管理员页面维护。
-- 管理密钥必须是独立随机值，不能复用 Cookie、LLM Key 或普通用户密码。
-- 二维码和手机号登录成功后的 Cookie 仅保存在当前服务进程；需要跨重启时使用安全运行时配置。
+- `.env`、数据库文件、Cookie、会话密钥和 API Key 不得提交到版本库。
+- 小红书原始 Cookie 不返回响应正文，也不写入 SQLite、日志、Zustand 或 `localStorage`。
+- 登录成功后服务端签发 7 天有效的加密 HttpOnly Cookie，每个浏览器独立保存和携带。
+- `TRAVELMIND_SESSION_SECRET` 必须使用至少 32 个随机字符，不能复用其他 API Key。
+- 客户端退出只删除自身会话；无状态会话无法由服务端单独撤销，必要时轮换会话密钥使全部会话失效。
 - API 响应、业务表和日志不得包含 Cookie、`xsec_token`、Authorization 或完整 Prompt。
-- 当前管理员鉴权不是完整用户系统，不应直接作为公网多租户认证方案。
-- 部署到公网前，应增加 HTTPS、反向代理、访问频率限制、用户鉴权、密钥托管和审计日志。
+- 公开登录接口已限制客户端创建频率和服务端任务容量，但不替代完整用户系统。
+- 部署到公网前，应启用 HTTPS，并补充用户鉴权、可信代理配置、集中限流、密钥托管和审计日志。
 
 ## 路线图
 

@@ -1,9 +1,15 @@
 """POI 搜索、详情和景点图片接口。"""
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.integrations.xhs import XHSAuthenticationRequiredError
 from app.schemas.poi import POIDetailResponse, POIPhotoResponse, POIResponse, POISearchResponse
 from app.services.poi_service import POIService, POIServiceError
+from app.xhs_session import (
+    XHSClientSession,
+    require_xhs_session,
+    xhs_authentication_required,
+)
 
 router = APIRouter(prefix="/api/poi", tags=["poi"])
 map_router = APIRouter(prefix="/api/map", tags=["poi"])
@@ -21,7 +27,7 @@ def _search_response(
     citylimit: bool,
     limit: int,
 ) -> POISearchResponse:
-    """执行一次 POI 搜索并统一生成接口响应。"""
+    """执行 POI 业务搜索并映射为 REST 响应。"""
     try:
         pois = POIService().search(keywords, city, citylimit, limit)
         return POISearchResponse(
@@ -69,14 +75,19 @@ def get_poi_detail(poi_id: str) -> POIDetailResponse:
 async def get_poi_photo(
     name: str = Query(..., min_length=1, max_length=100, description="景点名称"),
     city: str = Query(default="", max_length=50, description="所在城市"),
+    session: XHSClientSession = Depends(require_xhs_session),
 ) -> POIPhotoResponse:
     """获取景点的小红书首图，并缓存图片地址。"""
     try:
-        photo_url = await POIService().photo(name, city)
+        photo_url = await POIService(xhs_cookie=session.cookie).photo(name, city)
         return POIPhotoResponse(
             success=True,
             message="获取景点图片成功" if photo_url else "未找到景点图片",
             data={"name": name, "photo_url": photo_url},
         )
+    except XHSAuthenticationRequiredError as exc:
+        raise xhs_authentication_required(
+            "当前浏览器的小红书登录态已失效，请重新登录"
+        ) from exc
     except POIServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

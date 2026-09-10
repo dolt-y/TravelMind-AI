@@ -129,7 +129,6 @@ export function TripMap({ days }: TripMapProps) {
       <header className="result-visual__heading">
         <MapPinned size={22} aria-hidden="true" />
         <div>
-          <span>{t('tripVisuals.eyebrow')}</span>
           <h2 id="trip-map-title">{t('tripVisuals.map.title')}</h2>
         </div>
       </header>

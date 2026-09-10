@@ -82,7 +82,6 @@ export function BudgetChart({ budget }: BudgetChartProps) {
       <header className="result-visual__heading">
         <ChartPie size={22} aria-hidden="true" />
         <div>
-          <span>{t('tripVisuals.eyebrow')}</span>
           <h2 id="budget-chart-title">{t('tripVisuals.budget.title')}</h2>
         </div>
       </header>

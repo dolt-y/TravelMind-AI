@@ -14,7 +14,7 @@ from .xhs_repository import database_path
 
 
 class RouteRepositoryError(RuntimeError):
-    """路线缓存初始化、读取或写入异常。"""
+    """路线缓存配置、读取或写入异常。"""
 
 
 def _query_key(provider: str, query: RouteQuery) -> str:
@@ -28,7 +28,7 @@ class RouteRepository:
     """在统一 SQLite 文件中保存标准化路线及其查询时间。"""
 
     def __init__(self, path: str | Path | None = None):
-        """初始化路线缓存表；未传路径时使用统一数据文件。"""
+        """配置路线缓存使用的 SQLite 文件并创建所需数据表。"""
         self.path = Path(path) if path else database_path()
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)

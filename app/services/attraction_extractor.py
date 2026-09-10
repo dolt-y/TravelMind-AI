@@ -1,4 +1,4 @@
-"""负责把小红书旅行笔记整理为可供行程规划使用的景点候选。"""
+"""小红书旅行笔记的景点候选提取、地图补全和持久化服务。"""
 from __future__ import annotations
 
 import re
@@ -27,11 +27,11 @@ class AttractionExtractionError(RuntimeError):
 
 
 class AttractionAuthenticationRequiredError(AttractionExtractionError):
-    """系统内容账号未登录，需由管理员恢复后重新提取。"""
+    """当前浏览器未登录小红书，需要登录后重新提取。"""
 
 
 def _duration(value: Any) -> int:
-    """把模型返回的游玩时长统一转换为 1 到 1440 分钟。"""
+    """将模型游玩时长转换为 1 到 1440 分钟。"""
     text = str(value or "").strip().lower()
     match = re.search(r"\d+(?:\.\d+)?", text)
     if not match:
@@ -139,7 +139,7 @@ def _enrich_candidates_with_poi(
             continue
 
         names = {candidate.name.casefold(), candidate.name_zh.casefold(), candidate.name_en.casefold()}
-        # 说明：优先精确名称，避免同城搜索结果把候选景点替换成相近地点。
+        # NOTE: 优先使用名称完全匹配的 POI，防止相近地点覆盖原始景点候选。
         matched = next((poi for poi in pois if poi.name.casefold() in names), pois[0])
         matched_count += 1
         logger.info("POI 已匹配：{} -> {}", candidate.name, matched.name)
@@ -179,7 +179,7 @@ def _extract_attractions(
     notes: list[dict[str, Any]] = []
     try:
         provider = provider or XHSProvider()
-        # 说明：搜索数量由 note_limit 控制，避免无界抓取增加风控和模型成本。
+        # NOTE: note_limit 同时约束上游抓取规模和进入模型的笔记数量。
         logger.info("正在搜索小红书旅行笔记：{}", keyword)
         search_notes = provider.search_notes(keyword, limit=note_limit)
         logger.info("小红书搜索完成：获取 {} 条笔记", len(search_notes))
@@ -194,7 +194,7 @@ def _extract_attractions(
                         xsec_source=search_note.xsec_source,
                     )
                 except XHSProviderError:
-                    # 兼容处理：详情接口失败时使用搜索卡片正文，保留其他笔记的提取机会。
+                    # WORKAROUND: 详情接口失败时使用搜索卡片正文，单篇失败不应中断整批提取。
                     logger.warning("笔记详情读取失败 [{}/{}]，使用搜索结果内容", index, len(search_notes))
                     note = search_note
             content = (note.content or search_note.content or "").strip()
@@ -213,8 +213,8 @@ def _extract_attractions(
                     }
                 )
     except XHSAuthenticationRequiredError as exc:
-        # 保留账号未登录语义，供 REST 层返回稳定业务错误码。
-        raise AttractionAuthenticationRequiredError("小红书系统账号未登录") from exc
+        # NOTE: 登录失效必须保留独立异常类型，REST 层据此返回 XHS_AUTH_REQUIRED。
+        raise AttractionAuthenticationRequiredError("当前浏览器尚未登录小红书") from exc
     except XHSProviderError as exc:
         raise AttractionExtractionError(str(exc)) from exc
     finally:
@@ -229,7 +229,7 @@ def _extract_attractions(
         logger.info("正在调用大模型提取结构化景点")
         raw_items = parse_json_payload(llm.complete(_prompt(city, keywords, language, notes)))
     except LLMServiceError as exc:
-        # 解析失败只记录错误类型，不记录笔记正文或模型完整响应。
+        # NOTE: 日志只记录异常类型，不包含笔记正文和模型完整响应。
         logger.error("大模型景点提取失败，错误类型：{}", type(exc).__name__)
         raise AttractionExtractionError(str(exc)) from exc
 

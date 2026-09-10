@@ -21,7 +21,6 @@ export function HomeHero() {
       <div className="home-hero__inner">
         <div className="home-hero__content">
           <h1>{t('home.title')}</h1>
-          {/* <p>{t('home.subtitle')}</p> */}
           <PlannerForm mode="hero" onSubmit={() => navigate('/plan')} />
           <div className="home-hot-searches">
             <span><Flame size={14} aria-hidden="true" />{t('home.hotSearch')}</span>

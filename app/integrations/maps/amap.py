@@ -61,7 +61,7 @@ class AmapPOIProvider:
     DETAIL_URL = "https://restapi.amap.com/v3/place/detail"
 
     def __init__(self, api_key: str | None = None, timeout: float = 10):
-        """初始化只使用显式 Key 的 HTTP 客户端，不继承系统代理。"""
+        """配置仅使用显式 Key 且不继承系统代理的 HTTP 客户端。"""
         self.api_key = (api_key or amap_api_key()).strip()
         if not self.api_key:
             raise AmapPOIProviderError(

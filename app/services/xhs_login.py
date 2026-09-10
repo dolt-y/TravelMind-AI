@@ -1,11 +1,11 @@
-"""管理内部小红书内容账号登录任务，并更新系统运行会话。"""
+"""小红书登录挑战、状态轮询和浏览器会话交付服务。"""
 
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import time
-from threading import Lock
+from threading import Lock, Timer
 from typing import Any
 from uuid import uuid4
 
@@ -15,13 +15,17 @@ from app.integrations.xhs.provider import (
     XHSLoginApi,
     XHSProvider,
     XHSProviderError,
-    clear_runtime_cookie,
     normalize_cookie,
-    set_runtime_cookie,
 )
+from app.xhs_session import XHSClientSession, encode_xhs_session
 
 
 LOGIN_TTL_SECONDS = 300
+MAX_ACTIVE_LOGIN_TASKS = 12
+
+
+class XHSLoginCapacityError(RuntimeError):
+    """服务端同时处理的登录任务已达到上限。"""
 
 
 @dataclass
@@ -40,10 +44,12 @@ class XHSLoginTask:
     zone: str = "86"
     login: Any = None
     cookies: dict[str, str] | None = None
+    result_session_token: str | None = None
+    expiry_timer: Timer | None = None
 
 
 class XHSLoginService:
-    """为内部管理员提供三种系统内容账号登录方式。"""
+    """为各浏览器提供相互隔离的三种小红书登录方式。"""
 
     def __init__(self) -> None:
         self._tasks: dict[str, XHSLoginTask] = {}
@@ -59,9 +65,16 @@ class XHSLoginService:
             created_at=now,
             expires_at=now + LOGIN_TTL_SECONDS,
         )
+        task.expiry_timer = Timer(LOGIN_TTL_SECONDS, self.cancel, args=(task.login_id,))
+        task.expiry_timer.daemon = True
         with self._lock:
             self._cleanup_locked(now)
+            # NOTE: 公开登录入口必须限制待处理任务总量，避免耗尽后台线程和上游连接。
+            if len(self._tasks) >= MAX_ACTIVE_LOGIN_TASKS:
+                raise XHSLoginCapacityError("当前登录请求较多，请稍后重试")
             self._tasks[task.login_id] = task
+        # NOTE: 登录页面关闭后可能不再轮询，定时销毁保证挑战材料不会滞留在服务进程。
+        task.expiry_timer.start()
         return task
 
     def _cleanup_locked(self, now: float) -> None:
@@ -71,6 +84,8 @@ class XHSLoginService:
                 continue
             if task.login is not None:
                 task.login.close()
+            if task.expiry_timer is not None:
+                task.expiry_timer.cancel()
             del self._tasks[login_id]
 
     def start_qrcode(self) -> XHSLoginTask:
@@ -99,7 +114,7 @@ class XHSLoginService:
         return task
 
     def login_with_cookie(self, cookie: str) -> XHSLoginTask:
-        """验证用户提交的完整 Cookie，并切换当前进程登录会话。"""
+        """验证用户提交的完整 Cookie，等待路由写入当前浏览器。"""
         normalized = normalize_cookie(cookie)
         if not normalized:
             raise ValueError("Cookie 不能为空")
@@ -110,29 +125,47 @@ class XHSLoginService:
             raise
         except Exception as exc:
             raise XHSProviderError(f"Cookie 验证失败: {exc}") from exc
+        session_token = encode_xhs_session(XHSClientSession(cookie=normalized))
         task = self._new_task("cookie")
         with self._lock:
             if self._tasks.get(task.login_id) is not task:
                 raise XHSProviderError("Cookie 登录任务已取消")
-            set_runtime_cookie(normalized)
+            task.result_session_token = session_token
             task.state = "success"
             task.message = "Cookie 登录成功"
         return task
 
-    def logout(self) -> None:
-        """清除系统内容账号会话，并终止当前进程中的登录任务。"""
+    def claim_session(self, login_id: str) -> str | None:
+        """领取一次成功登录结果，避免任务继续持有可复用凭证。"""
         with self._lock:
-            tasks = list(self._tasks.values())
-            self._tasks.clear()
-        clear_runtime_cookie()
-        for task in tasks:
-            if task.login is not None:
-                try:
-                    task.login.close()
-                except Exception:
-                    logger.warning("清理小红书登录任务客户端失败，已继续撤销系统登录态")
-            task.login = None
-            task.cookies = None
+            task = self._tasks.get(login_id)
+            if task is None:
+                return None
+            if task.state != "success" or not task.result_session_token:
+                return None
+            result = task.result_session_token
+            task.result_session_token = None
+            self._tasks.pop(login_id, None)
+            if task.expiry_timer is not None:
+                task.expiry_timer.cancel()
+            return result
+
+    def cancel(self, login_id: str) -> None:
+        """只取消指定浏览器正在处理的登录挑战。"""
+        with self._lock:
+            task = self._tasks.pop(login_id, None)
+        if task is None:
+            return
+        if task.login is not None:
+            try:
+                task.login.close()
+            except Exception:
+                logger.warning("取消小红书登录挑战时关闭客户端失败")
+        task.login = None
+        task.cookies = None
+        task.result_session_token = None
+        if task.expiry_timer is not None:
+            task.expiry_timer.cancel()
 
     def status(self, login_id: str) -> XHSLoginTask:
         """读取登录任务状态，过期任务按不存在处理。"""
@@ -153,6 +186,7 @@ class XHSLoginService:
         return task.qr_url
 
     def _get_task(self, login_id: str) -> XHSLoginTask:
+        """读取仍在有效期内的登录任务，不存在时抛出 LookupError。"""
         with self._lock:
             task = self._tasks.get(login_id)
         if task is None:
@@ -167,17 +201,24 @@ class XHSLoginService:
             login = task.login
             task.login = None
             task.cookies = None
+            task.result_session_token = None
         if login is not None:
             login.close()
 
     def _finish(self, task: XHSLoginTask, login: Any, cookies: dict[str, str], user: dict[str, Any]) -> None:
-        """只保存运行所需会话，任务本身不继续持有完整 Cookie。"""
+        """保存待领取结果，路由写入浏览器后立即从任务中移除。"""
         nickname = str(user.get("nickname") or "")
+        session_token = encode_xhs_session(
+            XHSClientSession(
+                cookie=login.cookies_to_str(cookies),
+                user_nickname=nickname or None,
+            )
+        )
         with self._lock:
-            # NOTE: 退出操作会移除任务；已移除的后台任务不得重新建立系统登录态。
+            # NOTE: 过期清理可能移除任务；已移除任务不得再交付登录结果。
             active = self._tasks.get(task.login_id) is task
             if active:
-                set_runtime_cookie(login.cookies_to_str(cookies))
+                task.result_session_token = session_token
                 task.state = "success"
                 task.message = "登录成功"
                 task.user_nickname = nickname or None
@@ -241,7 +282,7 @@ class XHSLoginService:
                 raise RuntimeError("正式会话验证失败")
             self._finish(task, login, cookies, user)
         except Exception as exc:
-            # 只记录异常类型，避免认证材料、手机号或上游响应进入日志。
+            # NOTE: 登录失败日志不记录认证材料、手机号和上游响应正文。
             logger.error(
                 "小红书二维码登录任务失败，步骤：{}，异常类型：{}",
                 stage,
@@ -272,7 +313,7 @@ class XHSLoginService:
                 task.state = "code_sent"
                 task.message = "验证码已发送，请输入验证码"
         except Exception as exc:
-            # 只记录异常类型，避免认证材料、手机号或上游响应进入日志。
+            # NOTE: 登录失败日志不记录认证材料、手机号和上游响应正文。
             logger.error("小红书手机号登录初始化失败，异常类型：{}", type(exc).__name__)
             self._set_error(task, "验证码发送失败，请检查手机号后重试")
 
@@ -299,15 +340,15 @@ class XHSLoginService:
                 raise RuntimeError("正式会话验证失败")
             self._finish(task, login, cookies, user)
         except Exception as exc:
-            # 只记录异常类型，避免认证材料、手机号或上游响应进入日志。
+            # NOTE: 登录失败日志不记录认证材料、手机号和上游响应正文。
             logger.error("小红书手机号验证码验证失败，异常类型：{}", type(exc).__name__)
             self._set_error(task, "验证码验证失败，请重试")
 
 
-# 手机号和区号只在任务内部使用，状态接口不会返回这两个字段。
+# NOTE: 登录挑战只保留短时状态，成功会话由对应浏览器领取后立即移除。
 _LOGIN_SERVICE = XHSLoginService()
 
 
 def get_xhs_login_service() -> XHSLoginService:
-    """返回进程级登录服务，保证管理员登录结果可供内容检索复用。"""
+    """返回短时登录挑战服务，不提供跨请求共享的业务登录态。"""
     return _LOGIN_SERVICE

@@ -16,7 +16,7 @@ class XHSNote(BaseModel):
     title: str = Field(default="", description="笔记标题")
     content: str = Field(default="", description="笔记正文")
     source_url: str = Field(default="", description="笔记地址")
-    # 说明：详情令牌只供本次上游请求使用，禁止出现在接口和持久化数据中。
+    # NOTE: 详情令牌只供当前上游请求使用，不进入 REST 响应和持久化记录。
     xsec_token: str = Field(default="", exclude=True, repr=False, description="详情请求令牌")
     xsec_source: str = Field(default="pc_search", description="详情请求来源")
     images: list[str] = Field(default_factory=list, description="笔记图片地址")

@@ -1,12 +1,10 @@
-import { BedDouble, Bookmark, CalendarDays, CloudSun, MapPinned, Route, RotateCcw, Soup, WalletCards } from 'lucide-react'
+import { BedDouble, Bookmark, CalendarDays, CloudSun, Lightbulb, MapPinned, Route, RotateCcw, Soup } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { EmptyState } from '../components/common/EmptyState'
 import { AttractionCard } from '../components/planner/AttractionCard'
 import { BudgetChart } from '../components/planner/BudgetChart'
-import { HotelList } from '../components/planner/HotelList'
 import { TripMap } from '../components/planner/TripMap'
-import { WeatherStrip } from '../components/planner/WeatherStrip'
 import { useTripStore } from '../stores/tripStore'
 
 export function ResultsView() {
@@ -59,13 +57,9 @@ export function ResultsView() {
         </div>
       </section>
 
-      <div className="result-data-grid">
-        <section className="data-section"><div className="data-section__heading"><CloudSun /><div><span>{t('results.travelReference')}</span><h2>{t('results.weather')}</h2></div></div><WeatherStrip weather={plan.days.flatMap((day) => day.weather ? [day.weather] : [])} /></section>
-        <section className="data-section"><div className="data-section__heading"><BedDouble /><div><span>{t('results.travelReference')}</span><h2>{t('results.hotels')}</h2></div></div><HotelList hotels={plan.recommended_hotels} /></section>
-      </div>
-      <section className="trip-summary">
-        <div><WalletCards size={22} /><span>{t('results.knownBudget')}</span><strong>¥{plan.budget.total.toLocaleString()}</strong></div>
-        <p>{plan.overall_suggestions}</p>
+      <section className="trip-advice">
+        <Lightbulb size={22} aria-hidden="true" />
+        <div><h2>{t('results.advice')}</h2><p>{plan.overall_suggestions}</p></div>
       </section>
       <small className="record-id">ID: {plan.plan_id}</small>
     </div>

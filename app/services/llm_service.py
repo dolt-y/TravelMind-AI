@@ -1,4 +1,4 @@
-"""封装 OpenAI-compatible Chat Completions，提供旅行规划所需的文本和 JSON 解析。"""
+"""OpenAI-compatible Chat Completions 调用和 JSON 响应解析服务。"""
 
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ class LLMService:
         started_at = time.perf_counter()
         request_options: dict[str, Any] = {}
         if "dashscope.aliyuncs.com" in self.base_url:
-            # 景点结构化提取更重视 JSON 稳定性，默认关闭百炼模型的深度思考，避免超时。
+            # NOTE: 结构化任务默认关闭百炼深度思考，以保证 JSON 稳定性和响应时效。
             request_options["extra_body"] = {"enable_thinking": self.enable_thinking}
         try:
             response = self._client.chat.completions.create(
@@ -84,7 +84,7 @@ class LLMService:
             )
             content = response.choices[0].message.content or ""
         except Exception as exc:
-            # 只记录可用于定位的元数据，避免密钥、Prompt 和响应正文进入日志。
+            # NOTE: 日志只记录请求元数据，不包含密钥、Prompt 和响应正文。
             logger.error(
                 "LLM 请求失败：模型={}，HTTP状态={}，异常类型={}，耗时={:.2f}s",
                 self.model,

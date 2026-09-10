@@ -32,7 +32,7 @@ class HotelRepository:
     """在统一 SQLite 数据文件中保存酒店查询和标准化结果。"""
 
     def __init__(self, path: str | Path | None = None):
-        """初始化酒店缓存表；未传路径时使用统一数据文件。"""
+        """配置酒店缓存使用的 SQLite 文件并创建所需数据表。"""
         self.path = Path(path) if path else database_path()
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)

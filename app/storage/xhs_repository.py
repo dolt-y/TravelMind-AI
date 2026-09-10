@@ -33,7 +33,7 @@ def database_path() -> Path:
 
 
 def _now() -> str:
-    """生成统一保存的 UTC 时间字符串。"""
+    """生成 SQLite 记录使用的 UTC 时间字符串。"""
     return datetime.now(timezone.utc).isoformat()
 
 
@@ -46,7 +46,7 @@ class XHSRepository:
     """使用 SQLite 保存小红书原文和景点提取结果。"""
 
     def __init__(self, path: str | Path | None = None):
-        """初始化数据库文件，并在首次使用时创建所需数据表。"""
+        """配置小红书持久化使用的 SQLite 文件并创建所需数据表。"""
         self.path = Path(path) if path else database_path()
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -116,7 +116,7 @@ class XHSRepository:
         try:
             with self._connect() as connection:
                 connection.executescript(schema)
-                # 说明：为已有数据库补充 POI 字段，保证历史提取记录仍可读取。
+                # NOTE: 已有数据库缺少 POI 字段时就地补充，历史提取记录保持可读。
                 columns = {
                     row[1] for row in connection.execute("PRAGMA table_info(attraction_candidates)")
                 }

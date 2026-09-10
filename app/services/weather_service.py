@@ -82,7 +82,7 @@ class WeatherService:
         repository: WeatherRepository | None = None,
         cache_ttl_seconds: int | None = None,
     ):
-        """初始化天气依赖，允许测试注入假 Provider 和临时数据库。"""
+        """配置天气 Provider 和仓储，并支持测试注入替代实现。"""
         self.provider = provider
         try:
             self.repository = repository or WeatherRepository()
@@ -135,7 +135,7 @@ class WeatherService:
             logger.error("天气供应商查询失败：城市={}，原因={}", city, exc)
             raise WeatherServiceError(str(exc)) from exc
 
-        # 供应商可能返回规范城市名，缓存仍使用用户查询城市，确保相同请求可以稳定命中。
+        # NOTE: 缓存键保留用户查询城市，不使用供应商返回的规范城市名替换。
         forecasts = [
             item.model_copy(update={"provider": provider_name, "city": city})
             for item in forecasts

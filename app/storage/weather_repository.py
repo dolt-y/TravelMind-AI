@@ -13,14 +13,14 @@ from .xhs_repository import database_path
 
 
 class WeatherRepositoryError(RuntimeError):
-    """天气缓存初始化、写入或读取异常。"""
+    """天气缓存配置、读取或写入异常。"""
 
 
 class WeatherRepository:
     """按供应商、城市和预报日期缓存天气事实。"""
 
     def __init__(self, path: str | Path | None = None):
-        """初始化天气缓存表；默认复用 TravelMind 的 SQLite 文件。"""
+        """配置天气缓存使用的 SQLite 文件并创建所需数据表。"""
         self.path = Path(path) if path else database_path()
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)

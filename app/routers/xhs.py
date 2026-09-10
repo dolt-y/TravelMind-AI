@@ -1,6 +1,6 @@
 """小红书只读和旅行内容提取接口。"""
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.integrations.xhs import (
     XHSAuthenticationRequiredError,
@@ -21,22 +21,15 @@ from app.services.attraction_extractor import (
     extract_attractions_with_metadata,
 )
 from app.storage.xhs_repository import XHSRepository, XHSRepositoryError
+from app.xhs_session import (
+    XHSClientSession,
+    XHSSessionError,
+    require_xhs_session,
+    session_from_request,
+    xhs_authentication_required,
+)
 
 router = APIRouter(prefix="/api/xhs", tags=["xiaohongshu"])
-
-XHS_AUTH_REQUIRED = "XHS_AUTH_REQUIRED"
-
-
-def _authentication_required() -> HTTPException:
-    """构造系统内容账号未登录时的稳定 REST 错误。"""
-    # 使用 503 表示系统内容来源暂不可用，避免与普通用户的 401 身份认证混淆。
-    return HTTPException(
-        status_code=503,
-        detail={
-            "code": XHS_AUTH_REQUIRED,
-            "message": "小红书系统账号未登录，请管理员完成登录",
-        },
-    )
 
 
 def _response(note: XHSNote) -> XHSNoteResponse:
@@ -51,22 +44,31 @@ def _attraction_response(candidate: object) -> AttractionCandidateResponse:
 
 
 @router.get("/health")
-def xhs_health() -> dict[str, object]:
-    """报告配置状态，但不返回 Cookie 内容。"""
-    from app.integrations.xhs.provider import _VENDOR_ROOT, cookie_from_environment
+def xhs_health(request: Request) -> dict[str, object]:
+    """报告当前浏览器会话状态，但不返回任何认证内容。"""
+    from app.integrations.xhs.provider import _VENDOR_ROOT
+
+    try:
+        session_from_request(request)
+        configured = True
+    except XHSSessionError:
+        configured = False
 
     return {
-        "configured": bool(cookie_from_environment()),
+        "configured": configured,
         "vendor_present": _VENDOR_ROOT.is_dir(),
-        "mode": "pc-read-only",
+        "mode": "pc-read-only-client-session",
     }
 
 
 @router.post("/search", response_model=XHSSearchResponse)
-def search_xhs(request: XHSSearchRequest) -> XHSSearchResponse:
+def search_xhs(
+    request: XHSSearchRequest,
+    session: XHSClientSession = Depends(require_xhs_session),
+) -> XHSSearchResponse:
     """根据关键词搜索小红书笔记，并返回标准化的笔记卡片。"""
     try:
-        with XHSProvider() as provider:
+        with XHSProvider(cookie=session.cookie) as provider:
             notes = provider.search_notes(
                 request.keyword,
                 limit=request.limit,
@@ -74,7 +76,9 @@ def search_xhs(request: XHSSearchRequest) -> XHSSearchResponse:
             )
         return XHSSearchResponse(keyword=request.keyword, items=[_response(note) for note in notes])
     except XHSAuthenticationRequiredError as exc:
-        raise _authentication_required() from exc
+        raise xhs_authentication_required(
+            "当前浏览器的小红书登录态已失效，请重新登录"
+        ) from exc
     except XHSProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -84,10 +88,11 @@ def get_xhs_note(
     note_id: str,
     xsec_token: str = Query(default=""),
     xsec_source: str = Query(default="pc_search"),
+    session: XHSClientSession = Depends(require_xhs_session),
 ) -> XHSNoteResponse:
     """根据笔记 ID 读取详情，令牌只用于本次上游请求。"""
     try:
-        with XHSProvider() as provider:
+        with XHSProvider(cookie=session.cookie) as provider:
             note = provider.get_note(
                 note_id,
                 xsec_token=xsec_token,
@@ -95,21 +100,28 @@ def get_xhs_note(
             )
         return _response(note)
     except XHSAuthenticationRequiredError as exc:
-        raise _authentication_required() from exc
+        raise xhs_authentication_required(
+            "当前浏览器的小红书登录态已失效，请重新登录"
+        ) from exc
     except XHSProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.post("/attractions", response_model=XHSAttractionResponse)
-def extract_xhs_attractions(request: XHSAttractionRequest) -> XHSAttractionResponse:
+def extract_xhs_attractions(
+    request: XHSAttractionRequest,
+    session: XHSClientSession = Depends(require_xhs_session),
+) -> XHSAttractionResponse:
     """从指定城市的旅行笔记中提取景点候选。"""
     try:
-        extraction = extract_attractions_with_metadata(
-            city=request.city,
-            keywords=request.keywords,
-            language=request.language,
-            note_limit=request.note_limit,
-        )
+        with XHSProvider(cookie=session.cookie) as provider:
+            extraction = extract_attractions_with_metadata(
+                city=request.city,
+                keywords=request.keywords,
+                language=request.language,
+                note_limit=request.note_limit,
+                provider=provider,
+            )
         return XHSAttractionResponse(
             extraction_id=extraction.extraction_id,
             city=request.city,
@@ -118,7 +130,9 @@ def extract_xhs_attractions(request: XHSAttractionRequest) -> XHSAttractionRespo
             attractions=[_attraction_response(item) for item in extraction.attractions],
         )
     except AttractionAuthenticationRequiredError as exc:
-        raise _authentication_required() from exc
+        raise xhs_authentication_required(
+            "当前浏览器的小红书登录态已失效，请重新登录"
+        ) from exc
     except AttractionExtractionError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

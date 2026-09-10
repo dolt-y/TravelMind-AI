@@ -1,4 +1,4 @@
-"""TravelMind-AI 的 FastAPI 应用入口。"""
+"""TravelMind-AI FastAPI 应用与路由入口。"""
 
 from fastapi import FastAPI
 
@@ -12,7 +12,7 @@ from app.routers.weather import router as weather_router
 from app.routers.xhs import router as xhs_router
 from app.routers.xhs_login import router as xhs_login_router
 
-# 说明：API 应用只负责组装路由，具体业务由 integrations、services 和 storage 模块负责。
+# NOTE: 应用入口只注册路由，外部适配、业务编排和持久化分别由对应模块负责。
 app = FastAPI(title="TravelMind-AI API")
 
 app.include_router(xhs_router)

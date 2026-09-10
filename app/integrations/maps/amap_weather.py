@@ -70,7 +70,7 @@ class AmapWeatherProvider:
         *,
         client: httpx.Client | None = None,
     ):
-        """初始化天气客户端；测试时可注入带假响应的 HTTP 客户端。"""
+        """配置天气客户端，并支持测试注入替代 HTTP 客户端。"""
         self.api_key = (api_key or amap_api_key()).strip()
         if not self.api_key:
             raise AmapWeatherProviderError(
@@ -85,7 +85,7 @@ class AmapWeatherProvider:
         if not city:
             raise AmapWeatherProviderError("天气查询城市不能为空")
 
-        # 高德只接受城市名或 adcode，兼容“中国-北京”这类业务输入。
+        # NOTE: 高德只接受城市名或 adcode，请求前需移除“中国-”等业务前缀。
         provider_city = city.rsplit("-", 1)[-1].strip()
         try:
             response = self._client.get(

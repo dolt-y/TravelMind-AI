@@ -67,13 +67,15 @@ Map and weather numbers are never inferred by the LLM.
 - Background planning tasks, polling, WebSocket status updates, and stable failure codes.
 - Persisted complete plans, daily schedules, route segments, history, and plan restoration.
 - Responsive React UI in Chinese, English, and Japanese with AMap and ECharts visualization.
-- Cookie, QR code, and phone login for the administrator-managed Xiaohongshu system account.
-- Stable authentication errors and frontend redirection to system-account administration.
+- Cookie, QR-code, and phone login with an encrypted session isolated per browser.
+- Stable authentication errors and frontend redirection to account settings.
 
 ### Boundaries
 
-- Travelers never provide personal Xiaohongshu credentials; administrators maintain one system
-  content account.
+- Xiaohongshu sessions are stored as encrypted HttpOnly client cookies, not in the server database
+  or process-global state.
+- Login endpoints are public and establish an isolated Xiaohongshu session for each browser. A
+  complete end-user identity and authorization system is not included yet.
 - The Web form currently creates single-city trips. Multi-city planning is available through REST.
 - Missing provider values such as hotel prices and attraction ratings remain empty.
 - Budgets contain currently known estimates and are not guaranteed final expenses.
@@ -89,7 +91,7 @@ Map and weather numbers are never inferred by the LLM.
 - Node.js 20.19 or newer (22.19 recommended)
 - npm
 - Docker Engine 24 or newer and Docker Compose v2 (for container deployment)
-- A Xiaohongshu system account, AMap developer keys, and an OpenAI-compatible LLM key
+- A Xiaohongshu account, AMap developer keys, and an OpenAI-compatible LLM key
 
 ### Backend
 
@@ -127,16 +129,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Before starting, set at least `TRAVELMIND_ADMIN_KEY`, `LLM_API_KEY`, `AMAP_API_KEY`,
-`VITE_AMAP_JS_KEY`, and `VITE_AMAP_SECURITY_CODE`. `TRAVELMIND_XHS_COOKIE` is optional; an
-administrator can sign in from the system-account page after startup.
+Before starting, set at least `TRAVELMIND_SESSION_SECRET`, `LLM_API_KEY`,
+`AMAP_API_KEY`, `VITE_AMAP_JS_KEY`, and `VITE_AMAP_SECURITY_CODE`. Xiaohongshu cookies are no
+longer configured in `.env`; each browser signs in independently after startup.
 
 | Surface | Default URL |
 | --- | --- |
 | Web application | `http://127.0.0.1:8081` |
 | Trip planner | `http://127.0.0.1:8081/plan` |
 | Trip history | `http://127.0.0.1:8081/library` |
-| System account administration | `http://127.0.0.1:8081/admin/integrations/xhs` |
+| Account settings | `http://127.0.0.1:8081/settings` |
 | OpenAPI documentation | `http://127.0.0.1:8081/docs` |
 
 Common operations:
@@ -152,9 +154,10 @@ docker compose down
 deleted.
 
 `VITE_AMAP_JS_KEY` and `VITE_AMAP_SECURITY_CODE` are frontend build arguments, so changing them
-requires rebuilding the frontend image. Xiaohongshu sessions created through QR-code or phone
-login live only in the backend process. After a backend container restart, the application reloads
-`TRAVELMIND_XHS_COOKIE` from `.env`; without it, an administrator must sign in again.
+requires rebuilding the frontend image. Keep `TRAVELMIND_SESSION_SECRET` stable across restarts and
+instances or existing encrypted browser sessions become invalid. QR and phone challenges remain
+five-minute process-local state, so the current image runs one Uvicorn worker; successful sessions
+are stored only in the corresponding browser.
 
 ## Usage
 
@@ -176,7 +179,7 @@ npm run dev
 | Web application | `http://127.0.0.1:5173` |
 | Trip planner | `http://127.0.0.1:5173/plan` |
 | Trip history | `http://127.0.0.1:5173/library` |
-| System account administration | `http://127.0.0.1:5173/admin/integrations/xhs` |
+| Account settings | `http://127.0.0.1:5173/settings` |
 | OpenAPI documentation | `http://127.0.0.1:8000/docs` |
 
 Vite selects another port when `5173` is occupied. Use the URL printed in the terminal.
@@ -211,6 +214,10 @@ curl http://127.0.0.1:8000/api/trip/status/9fd32f0d4f38464d8ca7100af700f21a
 
 A successful `result` contains the complete plan. A failed task contains a stable `error_code`
 and a client-safe message.
+
+Trip submission and live Xiaohongshu endpoints require the current client to be signed in. The Web
+application sends its HttpOnly cookie automatically. CLI clients must retain the login response
+cookie and reuse the same cookie jar for later requests.
 
 For a multi-city request, use `cities` instead of `city`. The sum of city days must match the
 inclusive date range:
@@ -254,9 +261,11 @@ Persisted tasks and plans remain queryable after a service restart.
 
 ```mermaid
 flowchart LR
-    UI["React / Vite Web"] --> API["FastAPI REST / WebSocket"]
+    UI["React / Vite Web"] --> SESSION["Encrypted HttpOnly browser session"]
+    SESSION -->|"Sent with this browser's request"| API["FastAPI REST / WebSocket"]
     API --> ORCH["TripPlannerService"]
-    ORCH --> XHS["Spider_XHS adapter"]
+    API -->|"Request-scoped credential"| XHS["Spider_XHS adapter"]
+    ORCH --> XHS
     ORCH --> LLM["OpenAI-compatible LLM"]
     ORCH --> POI["AMap POI"]
     ORCH --> WEATHER["Weather service"]
@@ -270,6 +279,10 @@ flowchart LR
     ROUTE --> DB
     ORCH --> DB
 ```
+
+The raw Xiaohongshu Cookie exists only while validating a login or serving the current business
+request. The browser stores an authenticated encrypted token, and the server keeps no shared user
+Cookie. QR and phone challenges retain only five-minute, non-persistent task state.
 
 | Layer | Directory | Responsibility |
 | --- | --- | --- |
@@ -321,20 +334,23 @@ objects before they reach the planner or frontend.
 The route endpoint calculates factual distance, duration, and navigation steps for known
 endpoints. The itinerary planner decides attraction order.
 
-### System account administration
+### Xiaohongshu client login
 
-Every endpoint below requires the `X-TravelMind-Admin-Key` header:
+These endpoints are public and do not require a management key. A successful login issues an
+encrypted HttpOnly cookie only to the current browser. QR-code and phone challenges expire after
+five minutes. Each client can create up to eight login tasks per 60 seconds, and the server retains
+at most 12 tasks at once.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/admin/integrations/xhs/methods` | List login methods |
-| `POST` | `/api/admin/integrations/xhs/qrcode/start` | Start QR login |
-| `GET` | `/api/admin/integrations/xhs/{login_id}/qrcode` | Read the QR code |
-| `GET` | `/api/admin/integrations/xhs/{login_id}/status` | Read login status |
-| `POST` | `/api/admin/integrations/xhs/phone/start` | Send a phone verification code |
-| `POST` | `/api/admin/integrations/xhs/phone/verify` | Verify the SMS code |
-| `POST` | `/api/admin/integrations/xhs/cookie` | Validate and replace the runtime cookie |
-| `DELETE` | `/api/admin/integrations/xhs/session` | Clear the current process Xiaohongshu session |
+| `GET` | `/api/xhs/login/methods` | List login methods |
+| `POST` | `/api/xhs/login/qrcode/start` | Start QR login |
+| `GET` | `/api/xhs/login/{login_id}/qrcode` | Read the QR code |
+| `GET` | `/api/xhs/login/{login_id}/status` | Read status and claim the login result |
+| `POST` | `/api/xhs/login/phone/start` | Send a phone verification code |
+| `POST` | `/api/xhs/login/phone/verify` | Verify the SMS code |
+| `POST` | `/api/xhs/login/cookie` | Validate a Cookie and establish a browser session |
+| `DELETE` | `/api/xhs/login/session` | Clear this browser's Xiaohongshu session |
 
 ## Configuration
 
@@ -342,8 +358,7 @@ Every endpoint below requires the `X-TravelMind-Admin-Key` header:
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `TRAVELMIND_ADMIN_KEY` | For admin UI | none | Independent key protecting system-account endpoints |
-| `TRAVELMIND_XHS_COOKIE` | Recommended | none | Restore the Xiaohongshu session on startup |
+| `TRAVELMIND_SESSION_SECRET` | Yes | none | Encrypt browser sessions; use at least 32 random characters |
 | `LLM_API_KEY` | Yes | none | OpenAI-compatible API key |
 | `LLM_BASE_URL` | No | `https://api.openai.com/v1` | Chat Completions base URL |
 | `LLM_MODEL_ID` | No | `gpt-4o-mini` | Extraction and planning model |
@@ -383,6 +398,8 @@ states, complete plan JSON, daily schedules, and route segments.
 
 Zustand only caches the current form and most recently viewed plan in the browser. Trip history
 always uses `/api/trip/history` and `/api/trip/plan/{plan_id}` to restore data from SQLite.
+Xiaohongshu sessions are not stored in SQLite; the server decrypts one only for the current request
+or its running planning task.
 
 ## Project Structure
 
@@ -394,7 +411,8 @@ TravelMind-AI/
 │   ├── routers/            # REST and WebSocket routes
 │   ├── schemas/            # Independent API request/response models
 │   ├── services/           # Business services and complete trip planning
-│   └── storage/            # SQLite repositories and caches
+│   ├── storage/            # SQLite repositories and caches
+│   └── xhs_session.py      # Browser-session encryption and cookie delivery
 ├── data/                   # Local runtime data
 ├── tests/                  # unittest test suite
 ├── ui/                     # React / Vite Web application
@@ -432,16 +450,18 @@ Run real-provider smoke tests separately and keep secrets out of logs and test o
 
 ## Security
 
-- Never commit `.env`, databases, cookies, API keys, or private logs.
-- Regular users never handle Xiaohongshu login material; only protected admin pages manage it.
-- Use a dedicated random admin key. Do not reuse a cookie, LLM key, or user password.
-- QR and phone login cookies live in the current service process. Use secure runtime configuration
-  when the session must survive restarts.
+- Never commit `.env`, databases, cookies, session secrets, API keys, or private logs.
+- Raw Xiaohongshu cookies are never returned in response bodies or stored in SQLite, logs, Zustand,
+  or `localStorage`.
+- A successful login issues a seven-day encrypted HttpOnly cookie isolated to that browser.
+- Use at least 32 random characters for `TRAVELMIND_SESSION_SECRET`; never reuse another API key.
+- Signing out removes only the current browser session. Stateless sessions cannot be revoked
+  individually on the server; rotate the session secret when every existing session must expire.
 - API responses, business tables, and logs must not contain cookies, `xsec_token`, Authorization,
   or complete prompts.
-- The current admin-key boundary is not a complete public multi-tenant authentication system.
-- Add HTTPS, a reverse proxy, rate limits, user authentication, secret management, and auditing
-  before an Internet-facing deployment.
+- Public login creation is rate- and capacity-limited, but it is not a complete user identity system.
+- Enable HTTPS and add user authentication, trusted-proxy configuration, centralized rate limits,
+  secret management, and auditing before an Internet-facing deployment.
 
 ## Roadmap
 

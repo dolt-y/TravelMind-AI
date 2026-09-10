@@ -1,10 +1,8 @@
-"""封装内置 Spider_XHS PC 客户端，向业务层提供统一的小红书只读数据。"""
+"""Spider_XHS PC 客户端的小红书只读数据适配。"""
 from __future__ import annotations
 
 import json
-import os
 import sys
-from threading import Lock
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -18,36 +16,12 @@ _VENDOR_ROOT = Path(__file__).resolve().parents[3] / "vendor" / "spider_xhs"
 _PROJECT_ROOT = _VENDOR_ROOT.parents[1]
 load_dotenv(_PROJECT_ROOT / ".env", override=False)
 if str(_VENDOR_ROOT) not in sys.path:
-    # 说明：上游客户端使用顶层 ``xhs_utils`` 导入，路径注入限制在适配层内。
+    # WORKAROUND: Spider_XHS 使用顶层 xhs_utils 导入，路径注入仅保留在适配层。
     sys.path.insert(0, str(_VENDOR_ROOT))
 
 from apis.xhs_pc_apis import XHS_Apis  # noqa: E402 - 注入路径后再导入上游客户端
-from apis.xhs_pc_login_apis import XHSLoginApi  # noqa: E402 - 统一由适配层加载登录客户端
+from apis.xhs_pc_login_apis import XHSLoginApi  # noqa: E402 - 注入路径后再导入登录客户端
 from xhs_utils.xhs_pc import XHSPcAuth  # noqa: E402 - 注入路径后再导入上游鉴权类
-
-
-_RUNTIME_COOKIE: str | None = None
-_RUNTIME_COOKIE_LOCK = Lock()
-
-
-def set_runtime_cookie(cookie: str) -> None:
-    """保存管理员更新的系统内容会话，供后续旅行检索复用。"""
-    global _RUNTIME_COOKIE
-    with _RUNTIME_COOKIE_LOCK:
-        _RUNTIME_COOKIE = normalize_cookie(cookie)
-
-
-def clear_runtime_cookie() -> None:
-    """清除当前进程会话，并在服务重启前停止回退使用环境 Cookie。"""
-    global _RUNTIME_COOKIE
-    with _RUNTIME_COOKIE_LOCK:
-        _RUNTIME_COOKIE = ""
-
-
-def runtime_cookie() -> str | None:
-    """读取运行时会话覆盖值；None 表示尚未覆盖环境配置。"""
-    with _RUNTIME_COOKIE_LOCK:
-        return _RUNTIME_COOKIE
 
 
 class XHSProviderError(RuntimeError):
@@ -55,7 +29,7 @@ class XHSProviderError(RuntimeError):
 
 
 class XHSAuthenticationRequiredError(XHSProviderError):
-    """系统小红书账号缺少可用登录态。"""
+    """当前浏览器缺少可用的小红书登录态。"""
 
 
 _AUTH_REQUIRED_MESSAGES = ("登录已过期", "请先登录", "未登录")
@@ -65,12 +39,12 @@ def _raise_upstream_error(prefix: str, message: object) -> None:
     """把上游明确的登录失效响应与普通请求失败分开。"""
     normalized = str(message or "未知错误").strip()
     if any(marker in normalized for marker in _AUTH_REQUIRED_MESSAGES):
-        raise XHSAuthenticationRequiredError("小红书系统账号登录已失效")
+        raise XHSAuthenticationRequiredError("当前浏览器的小红书登录态已失效")
     raise XHSProviderError(f"{prefix}: {normalized}")
 
 
 def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) -> str:
-    """将请求头字符串或浏览器导出的 Cookie 数据统一为请求头字符串。"""
+    """将字符串或浏览器导出的 Cookie 数据转换为小红书请求头。"""
     if value is None:
         return ""
     if isinstance(value, (list, dict)):
@@ -93,17 +67,6 @@ def normalize_cookie(value: str | list[dict[str, Any]] | dict[str, Any] | None) 
         except json.JSONDecodeError:
             pass
     return normalized
-
-
-def cookie_from_environment() -> str:
-    """优先读取管理员设置的运行状态，未操作时再读取系统环境配置。"""
-    runtime_value = runtime_cookie()
-    # NOTE: 空字符串表示管理员已主动退出，不能再次启用环境中的旧 Cookie。
-    if runtime_value is not None:
-        return runtime_value
-    return normalize_cookie(
-        os.getenv("TRAVELMIND_XHS_COOKIE") or os.getenv("XHS_COOKIE") or os.getenv("COOKIES")
-    )
 
 
 def _first_image_urls(note_card: dict[str, Any]) -> list[str]:
@@ -150,10 +113,10 @@ class XHSProvider:
     """对 Spider_XHS PC API 客户端提供鉴权、搜索和详情读取封装。"""
 
     def __init__(self, cookie: str | None = None, proxies: dict[str, str] | None = None):
-        """使用传入或环境变量中的 Cookie 初始化小红书客户端。"""
-        self.cookie = normalize_cookie(cookie) if cookie is not None else cookie_from_environment()
+        """使用当前请求显式提供的 Cookie 配置小红书客户端。"""
+        self.cookie = normalize_cookie(cookie)
         if not self.cookie:
-            raise XHSAuthenticationRequiredError("小红书系统账号未登录")
+            raise XHSAuthenticationRequiredError("当前浏览器尚未登录小红书")
         try:
             self.auth = XHSPcAuth.from_cookie(self.cookie, proxies=proxies)
             self.api = XHS_Apis(self.auth)

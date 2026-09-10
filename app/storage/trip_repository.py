@@ -26,7 +26,7 @@ class TripRepository:
     """在统一 SQLite 文件中保存可恢复的主流程状态和结果。"""
 
     def __init__(self, path: str | Path | None = None):
-        """初始化行程相关数据表；不修改已有内容和地图缓存表。"""
+        """配置行程持久化并创建所需数据表，不修改其他业务表。"""
         self.path = Path(path) if path else database_path()
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)

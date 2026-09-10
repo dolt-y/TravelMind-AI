@@ -28,7 +28,7 @@ def _query_weather(
     start_date: date | None,
     end_date: date | None,
 ) -> WeatherResponse:
-    """执行天气查询并统一转换接口错误和响应。"""
+    """执行天气业务查询并映射服务异常和 REST 响应。"""
     try:
         result = WeatherService().query(
             city,

@@ -27,7 +27,7 @@ export function PlanningView() {
   useEffect(() => {
     if (stage !== 'error' || errorCode !== 'XHS_AUTH_REQUIRED') return
     clearPlanningError()
-    navigate('/admin/integrations/xhs?returnTo=%2Fplan%2Frunning', { replace: true })
+    navigate('/settings?returnTo=%2Fplan%2Frunning', { replace: true })
   }, [clearPlanningError, errorCode, navigate, stage])
 
   const steps = [

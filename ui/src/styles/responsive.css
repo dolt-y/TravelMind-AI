@@ -6,8 +6,8 @@
   .processing-page__visual { height: 470px; }
   .result-visual-grid { grid-template-columns: 1fr; }
   .budget-chart__canvas, .budget-chart__empty { height: 330px; min-height: 330px; }
-  .result-data-grid { grid-template-columns: 1fr; }
   .day-plan__details { gap: 24px; }
+  .site-footer__content { grid-template-columns: 1fr; gap: 38px; }
 }
 
 @media (max-width: 760px) {
@@ -34,8 +34,9 @@
   .processing-panel h1 { font-size: 33px; }
   .result-header { align-items: flex-start; flex-direction: column; }
   .attraction-grid { grid-template-columns: 1fr; }
-  .trip-summary { grid-template-columns: 1fr; gap: 18px; }
-  .site-footer { padding: 24px 16px; }
+  .site-footer { padding: 0 16px; }
+  .site-footer__inner { padding-top: 42px; }
+  .site-footer__links { gap: 24px; }
 }
 
 @media (max-width: 520px) {
@@ -63,13 +64,12 @@
   .library-history__meta { gap: 7px 12px; }
   .route-list > div { padding: 9px 0; align-items: flex-start; flex-direction: column; gap: 4px; }
   .attraction-card__media { height: 205px; }
-  .weather-strip { grid-template-columns: repeat(2, 1fr); }
-  .hotel-list article { grid-template-columns: 64px minmax(0, 1fr); }
-  .hotel-list img { width: 64px; height: 56px; }
-  .hotel-list__aside { grid-column: 2; grid-row: 2; display: flex; justify-content: space-between; }
   .settings-list article { align-items: flex-start; flex-direction: column; }
   .settings-list article > .language-switcher { width: 100%; justify-content: center; }
-  .site-footer { align-items: flex-start; flex-direction: column; }
+  .site-footer__links { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
+  .site-footer__group--sources { grid-column: 1 / -1; }
+  .site-footer__bottom { margin-top: 34px; align-items: flex-start; flex-direction: column; gap: 8px; }
+  .site-footer__bottom > small { text-align: left; }
 }
 
 @media (prefers-reduced-motion: reduce) {

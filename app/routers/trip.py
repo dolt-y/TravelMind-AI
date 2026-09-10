@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, WebSocket
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket
 from pydantic import ValidationError
 
 from app.models.trip import TripCityStay, TripPlan, TripPlanningRequest
@@ -19,6 +19,7 @@ from app.schemas.trip import (
 )
 from app.services.trip_planner_service import TripPlannerService
 from app.storage.trip_repository import TripRepository, TripRepositoryError
+from app.xhs_session import XHSClientSession, require_xhs_session
 
 
 router = APIRouter(prefix="/api/trip", tags=["trip"])
@@ -69,6 +70,7 @@ def _task_response(repository: TripRepository, task_id: str) -> TripTaskResponse
 def create_trip_plan(
     request: TripPlanRequest,
     background_tasks: BackgroundTasks,
+    session: XHSClientSession = Depends(require_xhs_session),
 ) -> TripCreateResponse:
     """持久化旅行需求并在后台启动完整规划。"""
     try:
@@ -81,9 +83,9 @@ def create_trip_plan(
     except TripRepositoryError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    # BackgroundTasks 会在响应发出后执行同步编排，避免长时间占用提交请求。
+    # NOTE: BackgroundTasks 在响应发出后执行同步编排，提交接口只负责返回任务标识。
     background_tasks.add_task(
-        TripPlannerService(repository=repository).run_task,
+        TripPlannerService(repository=repository, xhs_cookie=session.cookie).run_task,
         task_id,
         domain_request,
     )

@@ -54,7 +54,7 @@ class HotelService:
         repository: HotelRepository | None = None,
         cache_ttl_seconds: int | None = None,
     ):
-        """初始化酒店 Provider 和缓存仓储。"""
+        """配置酒店 Provider 和缓存仓储，并支持测试注入替代实现。"""
         self.provider = provider
         try:
             self.repository = repository or HotelRepository()

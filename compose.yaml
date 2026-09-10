@@ -9,8 +9,7 @@ services:
     init: true
     restart: unless-stopped
     environment:
-      TRAVELMIND_ADMIN_KEY: ${TRAVELMIND_ADMIN_KEY:?请在根目录 .env 中配置管理员密钥}
-      TRAVELMIND_XHS_COOKIE: ${TRAVELMIND_XHS_COOKIE:-}
+      TRAVELMIND_SESSION_SECRET: ${TRAVELMIND_SESSION_SECRET:?请在根目录 .env 中配置客户端会话加密密钥}
       TRAVELMIND_DATA_DIR: /app/data
       LLM_API_KEY: ${LLM_API_KEY:?请在根目录 .env 中配置 LLM_API_KEY}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}

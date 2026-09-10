@@ -8,10 +8,7 @@ import { NotFoundView } from '../views/NotFoundView'
 import { PlanningView } from '../views/PlanningView'
 import { PlanView } from '../views/PlanView'
 import { SettingsView } from '../views/SettingsView'
-import { XhsAdminView } from '../views/XhsAdminView'
-
 export const router = createBrowserRouter([
-  { path: '/admin/integrations/xhs', element: <XhsAdminView /> },
   {
     path: '/',
     element: <AppLayout />,

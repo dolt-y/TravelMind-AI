@@ -1,4 +1,4 @@
-"""POI兴趣地点 搜索、详情和景点图片业务服务。"""
+"""POI 搜索、详情查询和景点图片缓存服务。"""
 
 from __future__ import annotations
 
@@ -7,7 +7,11 @@ import asyncio
 from loguru import logger
 
 from app.integrations.maps import AmapPOIProvider, AmapPOIProviderError
-from app.integrations.xhs import XHSProvider, XHSProviderError
+from app.integrations.xhs import (
+    XHSAuthenticationRequiredError,
+    XHSProvider,
+    XHSProviderError,
+)
 from app.models.poi import POI
 from app.storage.poi_repository import POIRepository, POIRepositoryError
 
@@ -16,9 +20,9 @@ class POIServiceError(RuntimeError):
     """POI 业务操作失败。"""
 
 
-def _search_photo_from_xhs(name: str) -> str:
+def _search_photo_from_xhs(name: str, cookie: str) -> str:
     """从小红书搜索景点笔记并提取首张图片地址。"""
-    with XHSProvider() as provider:
+    with XHSProvider(cookie=cookie) as provider:
         notes = provider.search_notes(f"{name} 风景", limit=5, sort_type=1)
         photo_url = next((url for note in notes for url in note.images), "")
         if photo_url:
@@ -48,10 +52,12 @@ class POIService:
         *,
         provider: AmapPOIProvider | None = None,
         repository: POIRepository | None = None,
+        xhs_cookie: str | None = None,
     ):
-        """初始化地图 Provider 和 POI 仓储。"""
+        """配置地图 Provider、POI 仓储和当前请求的小红书凭证。"""
         self.provider = provider
         self.repository = repository or POIRepository()
+        self.xhs_cookie = xhs_cookie
 
     def search(self, keywords: str, city: str, citylimit: bool, limit: int) -> list[POI]:
         """搜索 POI，保存结果后返回标准化领域对象。"""
@@ -99,8 +105,14 @@ class POIService:
                 logger.info("景点图片命中本地缓存：{}", name)
                 return cached
             logger.info("景点图片未命中缓存，正在搜索小红书：{}", name)
-            # 说明：小红书客户端是同步实现，放到线程中避免阻塞 FastAPI 事件循环。
-            photo_url = await asyncio.to_thread(_search_photo_from_xhs, name)
+            # NOTE: 小红书客户端是同步实现，在线程中执行以保持 FastAPI 事件循环可用。
+            photo_url = await asyncio.to_thread(
+                _search_photo_from_xhs,
+                name,
+                self.xhs_cookie or "",
+            )
+        except XHSAuthenticationRequiredError:
+            raise
         except (XHSProviderError, POIRepositoryError) as exc:
             raise POIServiceError(str(exc)) from exc
         try:

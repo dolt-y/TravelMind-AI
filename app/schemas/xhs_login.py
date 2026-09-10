@@ -27,14 +27,14 @@ class XHSLoginMethodsResponse(BaseModel):
 
 
 class XHSLogoutResponse(BaseModel):
-    """返回系统内容账号登录态的清理结果。"""
+    """返回当前客户端登录态的清理结果。"""
 
     success: bool
     message: str
 
 
 class XHSLoginStartResponse(BaseModel):
-    """返回异步登录任务标识，不返回登录凭证。"""
+    """返回异步登录任务标识，登录凭证只通过 HttpOnly Cookie 交付。"""
 
     login_id: str
     method: LoginMethod
@@ -69,6 +69,6 @@ class XHSPhoneLoginVerifyRequest(BaseModel):
 
 
 class XHSCookieLoginRequest(BaseModel):
-    """提交完整 Cookie，仅用于服务端验证和建立运行会话。"""
+    """提交完整 Cookie，仅用于验证并签发当前浏览器加密会话。"""
 
     cookie: str = Field(min_length=8, max_length=20000)

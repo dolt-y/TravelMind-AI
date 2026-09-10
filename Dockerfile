@@ -40,5 +40,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=20s --timeout=5s --start-period=20s --retries=5 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3).read()"]
 
-# 单进程保证管理员更新的系统内容账号会话在所有请求中保持一致。
+# 登录挑战暂存在进程内，单进程确保二维码和短信状态轮询命中同一任务。
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]

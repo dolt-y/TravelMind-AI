@@ -1,4 +1,4 @@
-"""POI 领域模型，统一地图服务和业务层之间的数据结构。"""
+"""地图服务与业务层共享的 POI 领域模型。"""
 
 from pydantic import BaseModel, Field
 
@@ -22,4 +22,3 @@ class POI(BaseModel):
     city: str = Field(default="", description="所在城市")
     rating: float | None = Field(default=None, description="评分")
     photos: list[str] = Field(default_factory=list, description="图片地址")
-

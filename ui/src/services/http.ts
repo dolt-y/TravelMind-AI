@@ -24,6 +24,8 @@ export class ApiError extends Error {
 
 export const http = axios.create({
   baseURL: '/api',
+  // 小红书会话由浏览器通过 HttpOnly Cookie 隔离保存，前端脚本不读取凭证。
+  withCredentials: true,
   // 规划任务提交和状态查询均为轻量请求，耗时工作由服务端后台执行。
   timeout: 30_000,
   headers: { 'Content-Type': 'application/json' },

@@ -11,6 +11,7 @@ from typing import Any
 
 from loguru import logger
 
+from app.integrations.xhs import XHSProvider
 from app.models.hotel import Hotel, HotelSearchCriteria
 from app.models.route import RouteQuery
 from app.models.trip import (
@@ -42,7 +43,7 @@ class TripPlanningError(RuntimeError):
 
 
 class TripPlanningAuthenticationRequiredError(TripPlanningError):
-    """系统内容账号失效，需要管理员恢复登录态。"""
+    """当前浏览器的小红书登录态失效，需要重新登录。"""
 
     error_code = "XHS_AUTH_REQUIRED"
 
@@ -387,14 +388,16 @@ class TripPlannerService:
         hotel_service: HotelService | None = None,
         route_service: RouteService | None = None,
         composer: TripPlanComposer | None = None,
+        xhs_cookie: str | None = None,
     ):
-        """支持注入各业务依赖，线上默认使用项目现有实现。"""
+        """配置规划依赖；未注入时使用项目默认服务。"""
         self.repository = repository or TripRepository()
         self.attraction_extractor = attraction_extractor or extract_attractions_with_metadata
         self.weather_service = weather_service
         self.hotel_service = hotel_service
         self.route_service = route_service
         self.composer = composer
+        self.xhs_cookie = xhs_cookie
 
     def run_task(self, task_id: str, request: TripPlanningRequest) -> None:
         """执行已提交任务，并保证成功或失败状态最终都会持久化。"""
@@ -403,13 +406,16 @@ class TripPlannerService:
             self.repository.complete_task(task_id, plan)
             logger.info("旅行规划任务完成：task_id={}，plan_id={}", task_id, plan.plan_id)
         except AttractionAuthenticationRequiredError as exc:
-            self._fail(task_id, TripPlanningAuthenticationRequiredError.error_code, "小红书系统账号未登录，请管理员完成登录", exc)
+            self._fail(task_id, TripPlanningAuthenticationRequiredError.error_code, "当前浏览器的小红书登录态已失效，请重新登录", exc)
         except TripPlanningError as exc:
             self._fail(task_id, exc.error_code, str(exc), exc)
         except (AttractionExtractionError, WeatherServiceError, HotelServiceError, RouteServiceError) as exc:
             self._fail(task_id, "TRIP_PROVIDER_ERROR", "旅行资料服务暂时不可用，请稍后重试", exc)
         except (TripRepositoryError, Exception) as exc:
             self._fail(task_id, "TRIP_PLANNING_FAILED", "旅行计划生成失败，请稍后重试", exc)
+        finally:
+            # NOTE: 小红书凭证只绑定当前后台任务，任务结束后立即解除引用。
+            self.xhs_cookie = None
 
     def plan(self, task_id: str, request: TripPlanningRequest) -> TripPlan:
         """同步生成完整行程，供后台任务和集成测试复用。"""
@@ -449,12 +455,20 @@ class TripPlannerService:
                 progress_base,
                 f"正在整理 {stay.city} 的推荐地点",
             )
-            extraction = self.attraction_extractor(
-                city=stay.city,
-                keywords=keywords,
-                language=request.language,
-                note_limit=request.note_limit,
-            )
+            extraction_kwargs = {
+                "city": stay.city,
+                "keywords": keywords,
+                "language": request.language,
+                "note_limit": request.note_limit,
+            }
+            if self.xhs_cookie:
+                with XHSProvider(cookie=self.xhs_cookie) as provider:
+                    extraction = self.attraction_extractor(
+                        **extraction_kwargs,
+                        provider=provider,
+                    )
+            else:
+                extraction = self.attraction_extractor(**extraction_kwargs)
 
             weather: list[WeatherForecast] = []
             self._progress(

@@ -3,6 +3,7 @@ import { BookOpen, Compass, House, Map, Menu, Mountain, Settings, X } from 'luci
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher'
+import { SiteFooter } from '../components/common/SiteFooter'
 import { useAppStore } from '../stores/appStore'
 
 const navItems = [
@@ -49,9 +50,7 @@ export function AppLayout() {
         </div>
       </header>
       <main><Outlet /></main>
-      <footer className="site-footer">
-        <div><span>TravelMind</span><small>{t('footer.copy')}</small></div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

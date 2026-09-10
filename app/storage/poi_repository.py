@@ -21,7 +21,7 @@ class POIRepository:
     """在与小红书相同的 SQLite 文件中保存 POI 数据。"""
 
     def __init__(self, path: str | Path | None = None):
-        """初始化 POI 数据表；未传路径时使用统一数据文件。"""
+        """配置 POI 持久化使用的 SQLite 文件并创建所需数据表。"""
         self.path = Path(path) if path else database_path()
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)

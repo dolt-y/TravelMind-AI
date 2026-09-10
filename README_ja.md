@@ -65,12 +65,15 @@ POI、天気、ホテル、ルート情報を補完します。その後、LLM �
 - バックグラウンドタスク、ポーリング、WebSocket 状態通知、安定したエラーコード。
 - 完全な計画、日別予定、ルート区間の保存、履歴一覧、計画復元。
 - 中国語・英語・日本語に対応する React 画面、高徳地図、ECharts 予算表示。
-- 管理者用システムアカウントの Cookie、QR コード、電話番号ログイン。
-- 認証切れ時の安定したエラーと管理画面への誘導。
+- Cookie、QR コード、電話番号ログインと、ブラウザごとに分離された暗号化セッション。
+- 認証切れ時の安定したエラーとアカウント管理画面への誘導。
 
 ### 現在の境界
 
-- 一般ユーザーは個人の小紅書アカウントを入力しません。管理者がシステムアカウントを管理します。
+- 小紅書のログイン状態は暗号化された HttpOnly Cookie としてクライアントに保存され、
+  サーバーの DB やプロセス共有状態には保存されません。
+- ログイン API は公開され、ブラウザごとに独立した小紅書セッションを確立します。完全な
+  一般ユーザー認証・権限管理は未実装です。
 - Web フォームは現在単一都市向けです。複数都市は REST API から利用できます。
 - Provider が返さないホテル価格や評価は空のまま保持し、モデルで補完しません。
 - 予算は現時点で確認できる概算であり、最終的な支出を保証しません。
@@ -85,7 +88,7 @@ POI、天気、ホテル、ルート情報を補完します。その後、LLM �
 - Node.js 20.19 以上（22.19 推奨）
 - npm
 - Docker Engine 24 以上と Docker Compose v2（コンテナで実行する場合）
-- 小紅書システムアカウント、高徳開発者 Key、OpenAI-compatible LLM Key
+- 小紅書アカウント、高徳開発者 Key、OpenAI-compatible LLM Key
 
 ### バックエンド
 
@@ -124,16 +127,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-起動前に `TRAVELMIND_ADMIN_KEY`、`LLM_API_KEY`、`AMAP_API_KEY`、`VITE_AMAP_JS_KEY`、
-`VITE_AMAP_SECURITY_CODE` を設定してください。`TRAVELMIND_XHS_COOKIE` は任意で、起動後に
-システムアカウント管理画面からログインすることもできます。
+起動前に `TRAVELMIND_SESSION_SECRET`、`LLM_API_KEY`、
+`AMAP_API_KEY`、`VITE_AMAP_JS_KEY`、`VITE_AMAP_SECURITY_CODE` を設定してください。
+小紅書 Cookie は `.env` に保存せず、起動後に各ブラウザで個別にログインします。
 
 | 画面 | 既定 URL |
 | --- | --- |
 | Web アプリ | `http://127.0.0.1:8081` |
 | 旅行計画 | `http://127.0.0.1:8081/plan` |
 | 旅行履歴 | `http://127.0.0.1:8081/library` |
-| システムアカウント管理 | `http://127.0.0.1:8081/admin/integrations/xhs` |
+| アカウント設定 | `http://127.0.0.1:8081/settings` |
 | OpenAPI | `http://127.0.0.1:8081/docs` |
 
 主な運用コマンド：
@@ -149,9 +152,10 @@ docker compose down
 `docker compose down -v` を使用してください。
 
 `VITE_AMAP_JS_KEY` と `VITE_AMAP_SECURITY_CODE` はフロントエンドのビルド引数です。変更後は
-フロントエンドイメージを再ビルドしてください。QR コードまたは電話番号で作成した小紅書の
-ログイン状態はバックエンドプロセス内だけに保存されます。バックエンドコンテナ再起動後は
-`.env` の `TRAVELMIND_XHS_COOKIE` を再読込し、未設定の場合は管理者の再ログインが必要です。
+フロントエンドイメージを再ビルドしてください。`TRAVELMIND_SESSION_SECRET` は再起動時や
+複数インスタンス間で同じ値を維持しないと、既存のブラウザセッションが無効になります。
+QR・電話ログインのチャレンジは 5 分間のプロセス内一時状態なので、現在は Uvicorn Worker を
+1 つに固定しています。ログイン成功後のセッションは対応するブラウザだけに保存されます。
 
 ## 使い方
 
@@ -173,7 +177,7 @@ npm run dev
 | Web アプリ | `http://127.0.0.1:5173` |
 | 旅行計画 | `http://127.0.0.1:5173/plan` |
 | 旅行履歴 | `http://127.0.0.1:5173/library` |
-| システムアカウント管理 | `http://127.0.0.1:5173/admin/integrations/xhs` |
+| アカウント設定 | `http://127.0.0.1:5173/settings` |
 | OpenAPI | `http://127.0.0.1:8000/docs` |
 
 `5173` が使用中の場合、Vite は別のポートを選択します。ターミナル出力を確認してください。
@@ -202,6 +206,10 @@ curl -X POST http://127.0.0.1:8000/api/trip/plan \
 `202 Accepted` と `task_id`、ポーリング URL、WebSocket URL が返ります。タスク状態は
 `submitted`、`processing`、`completed`、`failed` のいずれかです。成功時の `result` は
 完全な計画、失敗時は安定した `error_code` とクライアント向けメッセージを含みます。
+
+完全な旅行計画とリアルタイム小紅書 API は、現在のクライアントでのログインが必要です。
+Web 画面は HttpOnly Cookie を自動送信します。CLI はログイン応答の Cookie を保存し、以後の
+リクエストで同じ Cookie Jar を使用してください。
 
 複数都市では `city` の代わりに `cities` を使います。各都市の日数合計は開始日から終了日までの
 日数と一致する必要があります。
@@ -245,9 +253,11 @@ Web 画面は現在ステータスをポーリングし、バックエンドは 
 
 ```mermaid
 flowchart LR
-    UI["React / Vite Web"] --> API["FastAPI REST / WebSocket"]
+    UI["React / Vite Web"] --> SESSION["暗号化 HttpOnly ブラウザセッション"]
+    SESSION -->|"現在のブラウザリクエストに付与"| API["FastAPI REST / WebSocket"]
     API --> ORCH["TripPlannerService"]
-    ORCH --> XHS["Spider_XHS アダプター"]
+    API -->|"リクエスト単位の認証情報"| XHS["Spider_XHS アダプター"]
+    ORCH --> XHS
     ORCH --> LLM["OpenAI-compatible LLM"]
     ORCH --> POI["高徳 POI"]
     ORCH --> WEATHER["天気サービス"]
@@ -261,6 +271,10 @@ flowchart LR
     ROUTE --> DB
     ORCH --> DB
 ```
+
+小紅書の生 Cookie は、ログイン検証中または現在の業務リクエスト中だけ一時的に存在します。
+ブラウザは認証付き暗号文を保存し、サーバーはユーザー間で共有される Cookie を保持しません。
+QR・電話ログインのチャレンジは 5 分間の非永続タスク状態だけを保持します。
 
 | レイヤー | ディレクトリ | 責務 |
 | --- | --- | --- |
@@ -312,20 +326,23 @@ REST schema とドメイン model は分離されています。Provider のレ�
 ルート API は確定した起点と終点の距離、所要時間、案内手順だけを計算します。観光地の
 訪問順序は旅程 Planner が決定します。
 
-### システムアカウント管理
+### 小紅書クライアントログイン
 
-以下の API には `X-TravelMind-Admin-Key` ヘッダーが必要です。
+以下の API は公開され、管理 Key は不要です。ログインに成功すると、暗号化された HttpOnly
+Cookie が現在のブラウザにだけ発行されます。QR コードと電話番号のログインタスクは 5 分で
+期限切れになります。クライアントごとの作成上限は 60 秒あたり 8 件、サーバー全体では同時に
+12 件までです。
 
 | メソッド | パス | 用途 |
 | --- | --- | --- |
-| `GET` | `/api/admin/integrations/xhs/methods` | ログイン方式を取得 |
-| `POST` | `/api/admin/integrations/xhs/qrcode/start` | QR ログインを開始 |
-| `GET` | `/api/admin/integrations/xhs/{login_id}/qrcode` | QR コードを取得 |
-| `GET` | `/api/admin/integrations/xhs/{login_id}/status` | ログイン状態を取得 |
-| `POST` | `/api/admin/integrations/xhs/phone/start` | SMS コードを送信 |
-| `POST` | `/api/admin/integrations/xhs/phone/verify` | SMS コードを検証 |
-| `POST` | `/api/admin/integrations/xhs/cookie` | Cookie を検証して更新 |
-| `DELETE` | `/api/admin/integrations/xhs/session` | 現在のプロセスの小紅書ログイン状態を消去 |
+| `GET` | `/api/xhs/login/methods` | ログイン方式を取得 |
+| `POST` | `/api/xhs/login/qrcode/start` | QR ログインを開始 |
+| `GET` | `/api/xhs/login/{login_id}/qrcode` | QR コードを取得 |
+| `GET` | `/api/xhs/login/{login_id}/status` | 状態を取得してログイン結果を受け取る |
+| `POST` | `/api/xhs/login/phone/start` | SMS コードを送信 |
+| `POST` | `/api/xhs/login/phone/verify` | SMS コードを検証 |
+| `POST` | `/api/xhs/login/cookie` | Cookie を検証してブラウザセッションを確立 |
+| `DELETE` | `/api/xhs/login/session` | 現在のブラウザの小紅書ログイン状態を消去 |
 
 ## 設定
 
@@ -333,8 +350,7 @@ REST schema とドメイン model は分離されています。Provider のレ�
 
 | 変数 | 必須 | 既定値 | 用途 |
 | --- | --- | --- | --- |
-| `TRAVELMIND_ADMIN_KEY` | 管理画面で必須 | なし | システムアカウント API を保護する独立 Key |
-| `TRAVELMIND_XHS_COOKIE` | 推奨 | なし | 起動時に小紅書セッションを復元 |
+| `TRAVELMIND_SESSION_SECRET` | 必須 | なし | ブラウザセッションを暗号化する 32 文字以上のランダム値 |
 | `LLM_API_KEY` | 必須 | なし | OpenAI-compatible API Key |
 | `LLM_BASE_URL` | 任意 | `https://api.openai.com/v1` | Chat Completions URL |
 | `LLM_MODEL_ID` | 任意 | `gpt-4o-mini` | 抽出と計画に使用するモデル |
@@ -370,6 +386,8 @@ data/travelmind.db
 
 Zustand はブラウザで現在のフォームと最後に表示した計画だけをキャッシュします。履歴画面は
 `/api/trip/history` と `/api/trip/plan/{plan_id}` を使用して SQLite から復元します。
+小紅書のログイン状態は SQLite に保存せず、現在のリクエストまたは実行中の計画タスクでのみ
+一時的に復号して使用します。
 
 ## プロジェクト構成
 
@@ -381,7 +399,8 @@ TravelMind-AI/
 │   ├── routers/            # REST と WebSocket
 │   ├── schemas/            # 独立した API リクエスト/レスポンスモデル
 │   ├── services/           # 業務サービスと完全な旅程編成
-│   └── storage/            # SQLite リポジトリとキャッシュ
+│   ├── storage/            # SQLite リポジトリとキャッシュ
+│   └── xhs_session.py      # ブラウザセッション暗号化と Cookie 交付
 ├── data/                   # ローカル実行データ
 ├── tests/                  # unittest テスト
 ├── ui/                     # React / Vite Web アプリ
@@ -419,14 +438,15 @@ git diff --check
 
 ## セキュリティ
 
-- `.env`、データベース、Cookie、API Key、非公開ログをコミットしないでください。
-- 一般ユーザーは小紅書のログイン情報を扱いません。保護された管理画面だけが管理します。
-- 管理 Key は独立したランダム値にし、Cookie、LLM Key、ユーザーパスワードを再利用しないでください。
-- QR・電話ログイン後の Cookie は現在のサービスプロセスに保存されます。再起動をまたぐ場合は
-  安全なランタイム設定を使用してください。
+- `.env`、データベース、Cookie、セッション Key、API Key、非公開ログをコミットしないでください。
+- 小紅書の生 Cookie はレスポンス本文、SQLite、ログ、Zustand、`localStorage` に保存しません。
+- ログイン成功時、7 日間有効な暗号化 HttpOnly Cookie を現在のブラウザだけに発行します。
+- `TRAVELMIND_SESSION_SECRET` は 32 文字以上のランダム値にし、他の API Key を再利用しないでください。
+- ログアウトは現在のブラウザだけに適用されます。ステートレスセッションを個別にサーバーから
+  失効できないため、全セッションを無効にする場合はセッション Key をローテーションします。
 - API、業務テーブル、ログに Cookie、`xsec_token`、Authorization、完全な Prompt を残さないでください。
-- 現在の管理 Key は公開マルチテナント向けの完全な認証システムではありません。
-- 公開前に HTTPS、リバースプロキシ、レート制限、ユーザー認証、秘密情報管理、監査を追加してください。
+- 公開ログインには作成頻度と同時タスク数の制限がありますが、完全なユーザー認証ではありません。
+- 公開前に HTTPS、ユーザー認証、信頼済み Proxy 設定、集中レート制限、秘密情報管理、監査を追加してください。
 
 ## ロードマップ
 

@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { ArrowRight, Cookie, LoaderCircle, LogOut, Phone, QrCode, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
-  clearXhsAdminSession,
-  getXhsAdminLoginStatus,
-  getXhsAdminQrImage,
-  loginXhsAdminWithCookie,
-  startXhsAdminPhoneLogin,
-  startXhsAdminQrLogin,
-  verifyXhsAdminPhoneLogin,
-} from '../../services/xhsAdmin'
+  clearXhsSession,
+  getXhsLoginStatus,
+  getXhsQrImage,
+  loginXhsWithCookie,
+  startXhsPhoneLogin,
+  startXhsQrLogin,
+  verifyXhsPhoneLogin,
+} from '../../services/xhsLogin'
 import type {
   XHSLoginMethod,
   XHSLoginStartResponse,
@@ -19,7 +19,6 @@ import type {
 const terminalStates = new Set(['success', 'expired', 'error'])
 
 interface XhsAccountManagerProps {
-  adminKey: string
   methods: XHSLoginMethod[]
   onContinue?: () => void
 }
@@ -28,7 +27,7 @@ function taskFromStart(response: XHSLoginStartResponse): XHSLoginStatusResponse 
   return { ...response, qr_url: null, user_nickname: null }
 }
 
-export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountManagerProps) {
+export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProps) {
   const { t } = useTranslation()
   const defaultMethod = methods.includes('qrcode') ? 'qrcode' : (methods[0] || 'cookie')
   const [method, setMethod] = useState<XHSLoginMethod>(defaultMethod)
@@ -47,27 +46,27 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
     if (!task?.login_id || terminalStates.has(task.state)) return
 
     const poll = window.setInterval(() => {
-      void getXhsAdminLoginStatus(adminKey, task.login_id)
+      void getXhsLoginStatus(task.login_id)
         .then(setTask)
         .catch((pollError: unknown) => {
-          setError(pollError instanceof Error ? pollError.message : t('adminXhs.errors.request'))
+          setError(pollError instanceof Error ? pollError.message : t('xhsAccount.errors.request'))
         })
     }, 1_500)
 
     return () => window.clearInterval(poll)
-  }, [adminKey, task?.login_id, task?.state, t])
+  }, [task?.login_id, task?.state, t])
 
   const qrReady = method === 'qrcode'
     && !!task
     && (task.state === 'waiting_scan' || task.state === 'waiting_confirm')
   const qrLoginId = qrReady ? task?.login_id : undefined
 
-  // NOTE: 二维码接口同样需要管理密钥，不能交给 img 标签直接公开请求。
+  // 二维码以临时 Blob 地址展示，任务重置或组件卸载时立即释放。
   useEffect(() => {
     if (!qrLoginId || qrImageUrl) return
     let disposed = false
 
-    void getXhsAdminQrImage(adminKey, qrLoginId)
+    void getXhsQrImage(qrLoginId)
       .then((blob) => {
         const objectUrl = URL.createObjectURL(blob)
         if (disposed) {
@@ -78,14 +77,14 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
       })
       .catch((imageError: unknown) => {
         if (!disposed) {
-          setError(imageError instanceof Error ? imageError.message : t('adminXhs.errors.qrcode'))
+          setError(imageError instanceof Error ? imageError.message : t('xhsAccount.errors.qrcode'))
         }
       })
 
     return () => {
       disposed = true
     }
-  }, [adminKey, qrImageUrl, qrLoginId, t])
+  }, [qrImageUrl, qrLoginId, t])
 
   useEffect(() => () => {
     if (qrImageUrl) URL.revokeObjectURL(qrImageUrl)
@@ -103,20 +102,20 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
   }
 
   async function clearSession() {
-    if (!window.confirm(t('adminXhs.logout.confirm'))) return
+    if (!window.confirm(t('xhsAccount.logout.confirm'))) return
     setBusy(true)
     setError(null)
     setNotice(null)
     try {
-      const response = await clearXhsAdminSession(adminKey)
+      const response = await clearXhsSession(task?.login_id)
       if (qrImageUrl) URL.revokeObjectURL(qrImageUrl)
       setQrImageUrl(null)
       setTask(null)
       setCode('')
       setCookie('')
-      setNotice(response.message || t('adminXhs.logout.success'))
+      setNotice(response.message || t('xhsAccount.logout.success'))
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('adminXhs.errors.logout'))
+      setError(requestError instanceof Error ? requestError.message : t('xhsAccount.errors.logout'))
     } finally {
       setBusy(false)
     }
@@ -128,9 +127,9 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
     if (qrImageUrl) URL.revokeObjectURL(qrImageUrl)
     setQrImageUrl(null)
     try {
-      setTask(taskFromStart(await startXhsAdminQrLogin(adminKey)))
+      setTask(taskFromStart(await startXhsQrLogin()))
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('adminXhs.errors.request'))
+      setError(requestError instanceof Error ? requestError.message : t('xhsAccount.errors.request'))
     } finally {
       setBusy(false)
     }
@@ -140,10 +139,10 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
     setBusy(true)
     setError(null)
     try {
-      const response = await startXhsAdminPhoneLogin(adminKey, phone.trim(), zone.trim())
+      const response = await startXhsPhoneLogin(phone.trim(), zone.trim())
       setTask(taskFromStart(response))
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('adminXhs.errors.request'))
+      setError(requestError instanceof Error ? requestError.message : t('xhsAccount.errors.request'))
     } finally {
       setBusy(false)
     }
@@ -154,10 +153,10 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
     setBusy(true)
     setError(null)
     try {
-      const response = await verifyXhsAdminPhoneLogin(adminKey, task.login_id, code.trim())
+      const response = await verifyXhsPhoneLogin(task.login_id, code.trim())
       setTask(taskFromStart(response))
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('adminXhs.errors.request'))
+      setError(requestError instanceof Error ? requestError.message : t('xhsAccount.errors.request'))
     } finally {
       setBusy(false)
     }
@@ -167,85 +166,84 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
     setBusy(true)
     setError(null)
     try {
-      const response = await loginXhsAdminWithCookie(adminKey, cookie.trim())
+      const response = await loginXhsWithCookie(cookie.trim())
       setTask(taskFromStart(response))
       setCookie('')
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('adminXhs.errors.request'))
+      setError(requestError instanceof Error ? requestError.message : t('xhsAccount.errors.request'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <section className="admin-account-manager" aria-labelledby="xhs-account-title">
-      <div className="admin-section-heading">
+    <section className="xhs-account-manager" aria-labelledby="xhs-account-title">
+      <div className="xhs-account-heading">
         <div>
-          <span className="eyebrow">{t('adminXhs.account.eyebrow')}</span>
-          <h2 id="xhs-account-title">{t('adminXhs.account.title')}</h2>
-          <p>{t('adminXhs.account.copy')}</p>
+          <span className="eyebrow">{t('xhsAccount.account.eyebrow')}</span>
+          <h2 id="xhs-account-title">{t('xhsAccount.account.title')}</h2>
+          <p>{t('xhsAccount.account.copy')}</p>
         </div>
-        <span className="admin-access-state"><ShieldCheck size={15} />{t('adminXhs.access.verified')}</span>
       </div>
 
-      <div className="segmented-control" aria-label={t('adminXhs.login.method')}>
-        {methods.includes('qrcode') && <button className={method === 'qrcode' ? 'is-active' : ''} onClick={() => reset('qrcode')} type="button"><QrCode size={17} />{t('adminXhs.login.qrcode')}</button>}
-        {methods.includes('phone') && <button className={method === 'phone' ? 'is-active' : ''} onClick={() => reset('phone')} type="button"><Phone size={17} />{t('adminXhs.login.phone')}</button>}
+      <div className="segmented-control" aria-label={t('xhsAccount.login.method')}>
+        {methods.includes('qrcode') && <button className={method === 'qrcode' ? 'is-active' : ''} onClick={() => reset('qrcode')} type="button"><QrCode size={17} />{t('xhsAccount.login.qrcode')}</button>}
+        {methods.includes('phone') && <button className={method === 'phone' ? 'is-active' : ''} onClick={() => reset('phone')} type="button"><Phone size={17} />{t('xhsAccount.login.phone')}</button>}
         {methods.includes('cookie') && <button className={method === 'cookie' ? 'is-active' : ''} onClick={() => reset('cookie')} type="button"><Cookie size={17} />Cookie</button>}
       </div>
 
-      <div className="admin-login-panel">
+      <div className="xhs-login-panel">
         {method === 'qrcode' && (
-          <div className="admin-login-panel__center">
+          <div className="xhs-login-panel__center">
             {qrImageUrl && qrReady ? (
-              <img className="qr-image" src={qrImageUrl} alt={t('adminXhs.login.qrAlt')} />
+              <img className="qr-image" src={qrImageUrl} alt={t('xhsAccount.login.qrAlt')} />
             ) : (
               <div className="qr-placeholder">
                 {busy || (!!task && !terminalStates.has(task.state)) ? <LoaderCircle className="spin" size={40} /> : <QrCode size={46} strokeWidth={1.4} />}
-                <span>{task?.message || t('adminXhs.login.qrReady')}</span>
+                <span>{task?.message || t('xhsAccount.login.qrReady')}</span>
               </div>
             )}
             <button className="button button--primary" type="button" onClick={() => void startQrCode()} disabled={busy || (!!task && !terminalStates.has(task.state))}>
               {busy && <LoaderCircle className="spin" size={17} />}
-              {task ? t('adminXhs.login.qrRestart') : t('adminXhs.login.qrStart')}
+              {task ? t('xhsAccount.login.qrRestart') : t('xhsAccount.login.qrStart')}
             </button>
           </div>
         )}
 
         {method === 'phone' && (
-          <div className="admin-login-form">
-            <div className="admin-phone-row">
-              <label className="field admin-zone-field"><span>{t('adminXhs.login.zone')}</span><input inputMode="numeric" value={zone} onChange={(event) => setZone(event.target.value.replace(/\D/g, ''))} /></label>
-              <label className="field"><span>{t('adminXhs.login.phoneNumber')}</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} placeholder="13800000000" /></label>
+          <div className="xhs-login-form">
+            <div className="xhs-phone-row">
+              <label className="field xhs-zone-field"><span>{t('xhsAccount.login.zone')}</span><input inputMode="numeric" value={zone} onChange={(event) => setZone(event.target.value.replace(/\D/g, ''))} /></label>
+              <label className="field"><span>{t('xhsAccount.login.phoneNumber')}</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} placeholder="13800000000" /></label>
             </div>
-            <div className="admin-code-row">
-              <label className="field"><span>{t('adminXhs.login.code')}</span><input autoComplete="one-time-code" inputMode="numeric" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('adminXhs.login.codePlaceholder')} /></label>
-              <button className="button button--secondary" type="button" onClick={() => void startPhone()} disabled={busy || !zone.trim() || !phone.trim()}>{t('adminXhs.login.sendCode')}</button>
+            <div className="xhs-code-row">
+              <label className="field"><span>{t('xhsAccount.login.code')}</span><input autoComplete="one-time-code" inputMode="numeric" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('xhsAccount.login.codePlaceholder')} /></label>
+              <button className="button button--secondary" type="button" onClick={() => void startPhone()} disabled={busy || !zone.trim() || !phone.trim()}>{t('xhsAccount.login.sendCode')}</button>
             </div>
             <button className="button button--primary" type="button" onClick={() => void verifyPhone()} disabled={busy || !task?.login_id || !code.trim()}>
-              {busy && <LoaderCircle className="spin" size={17} />}{t('adminXhs.login.verify')}
+              {busy && <LoaderCircle className="spin" size={17} />}{t('xhsAccount.login.verify')}
             </button>
           </div>
         )}
 
         {method === 'cookie' && (
-          <div className="admin-login-form">
-            <label className="field"><span>{t('adminXhs.login.cookieLabel')}</span><textarea autoComplete="off" spellCheck={false} value={cookie} onChange={(event) => setCookie(event.target.value)} placeholder="a1=...; web_session=..." /></label>
-            <p className="form-note"><ShieldCheck size={15} />{t('adminXhs.login.cookieNote')}</p>
+          <div className="xhs-login-form">
+            <label className="field"><span>{t('xhsAccount.login.cookieLabel')}</span><textarea autoComplete="off" spellCheck={false} value={cookie} onChange={(event) => setCookie(event.target.value)} placeholder="a1=...; web_session=..." /></label>
+            <p className="form-note"><ShieldCheck size={15} />{t('xhsAccount.login.cookieNote')}</p>
             <button className="button button--primary" type="button" onClick={() => void submitCookie()} disabled={busy || !cookie.trim()}>
-              {busy && <LoaderCircle className="spin" size={17} />}{t('adminXhs.login.cookieSubmit')}
+              {busy && <LoaderCircle className="spin" size={17} />}{t('xhsAccount.login.cookieSubmit')}
             </button>
           </div>
         )}
 
         {task && (
           <div className={`login-status login-status--${task.state}`} role="status">
-            <strong>{t(`adminXhs.states.${task.state}`)}</strong>
-            <span>{task.message}</span>
-            {task.user_nickname && <span>{t('adminXhs.login.currentUser', { name: task.user_nickname })}</span>}
+            <strong>{t(`xhsAccount.states.${task.state}`)}</strong>
+            {task.state !== 'success' && <span>{task.message}</span>}
+            {task.user_nickname && <span>{t('xhsAccount.login.currentUser', { name: task.user_nickname })}</span>}
             {task.state === 'success' && onContinue && (
               <button className="button button--primary login-status__action" type="button" onClick={onContinue}>
-                {t('adminXhs.login.continuePlanning')}<ArrowRight size={16} />
+                {t('xhsAccount.login.continuePlanning')}<ArrowRight size={16} />
               </button>
             )}
           </div>
@@ -253,10 +251,10 @@ export function XhsAccountManager({ adminKey, methods, onContinue }: XhsAccountM
         {notice && <div className="login-status login-status--success" role="status"><strong>{notice}</strong></div>}
         {error && <div className="inline-alert inline-alert--error" role="alert">{error}</div>}
       </div>
-      <div className="admin-session-actions">
-        <div><strong>{t('adminXhs.logout.title')}</strong><span>{t('adminXhs.logout.copy')}</span></div>
+      <div className="xhs-session-actions">
+        <div><strong>{t('xhsAccount.logout.title')}</strong><span>{t('xhsAccount.logout.copy')}</span></div>
         <button className="button button--danger" type="button" onClick={() => void clearSession()} disabled={busy}>
-          {busy ? <LoaderCircle className="spin" size={17} /> : <LogOut size={17} />}{t('adminXhs.logout.action')}
+          {busy ? <LoaderCircle className="spin" size={17} /> : <LogOut size={17} />}{t('xhsAccount.logout.action')}
         </button>
       </div>
     </section>

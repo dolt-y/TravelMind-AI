@@ -48,7 +48,6 @@ export function LibraryView() {
       <header className="page-heading">
         <span className="eyebrow"><BookOpen size={15} />{t('library.eyebrow')}</span>
         <h1>{t('library.title')}</h1>
-        <p>{t('library.copy')}</p>
         {!!history.length && <small>{t('libraryHistory.count', { count: history.length })}</small>}
       </header>
 

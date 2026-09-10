@@ -120,7 +120,7 @@ class AmapRouteProvider:
         *,
         client: httpx.Client | None = None,
     ):
-        """初始化路线客户端；测试时可注入带假响应的 HTTP 客户端。"""
+        """配置路线客户端，并支持测试注入替代 HTTP 客户端。"""
         self.api_key = (api_key or amap_api_key()).strip()
         if not self.api_key:
             raise AmapRouteProviderError(

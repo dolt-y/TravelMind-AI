@@ -49,7 +49,7 @@ class RouteService:
         repository: RouteRepository | None = None,
         cache_ttl_seconds: int | None = None,
     ):
-        """初始化路线 Provider、地点解析服务和缓存仓储。"""
+        """配置路线 Provider、地点解析服务和缓存仓储。"""
         self.provider = provider
         self.poi_service = poi_service
         try:
