@@ -136,15 +136,20 @@ async def watch_trip_status(websocket: WebSocket, task_id: str) -> None:
 
 @router.get("/history", response_model=TripHistoryResponse)
 def list_trip_history(
-    limit: int = Query(default=20, ge=1, le=100),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=8, ge=1, le=20),
 ) -> TripHistoryResponse:
-    """返回最近完成的旅行计划摘要。"""
+    """分页返回最近完成的旅行计划摘要。"""
     try:
-        items = TripRepository().list_plans(limit)
+        items, total = TripRepository().list_plans(page=page, page_size=page_size)
     except TripRepositoryError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return TripHistoryResponse(
-        items=[TripHistoryItemResponse.model_validate(item) for item in items]
+        items=[TripHistoryItemResponse.model_validate(item) for item in items],
+        page=page,
+        page_size=page_size,
+        total=total,
+        total_pages=(total + page_size - 1) // page_size,
     )
 
 

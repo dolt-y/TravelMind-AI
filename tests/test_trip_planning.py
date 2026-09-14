@@ -193,7 +193,7 @@ class TripPlannerFlowTest(unittest.TestCase):
 
             task = repository.get_task("task-1")
             plan = repository.get_plan("task-1")
-            history = repository.list_plans()
+            history, total = repository.list_plans()
 
         self.assertIsNotNone(task)
         self.assertEqual(task.status, "completed")
@@ -206,7 +206,36 @@ class TripPlannerFlowTest(unittest.TestCase):
         self.assertEqual(plan.budget.hotels, 600)
         self.assertEqual(plan.budget.meals, 120)
         self.assertEqual(plan.budget.total, 720)
+        self.assertEqual(total, 1)
         self.assertEqual(history[0]["plan_id"], "task-1")
+
+    def test_history_is_paginated_with_a_stable_total(self) -> None:
+        """历史列表应返回固定页大小、总数和无重复的相邻页。"""
+        with TemporaryDirectory() as directory:
+            repository = TripRepository(Path(directory) / "trip.db")
+            request = _request()
+            service = TripPlannerService(
+                repository=repository,
+                attraction_extractor=_extraction,
+                weather_service=FakeWeatherService(),
+                hotel_service=FakeHotelService(),
+                route_service=FakeRouteService(),
+                composer=TripPlanComposer(FakeLLM()),
+            )
+            for index in range(1, 6):
+                task_id = f"task-{index}"
+                repository.create_task(task_id, request)
+                service.run_task(task_id, request)
+
+            first_page, first_total = repository.list_plans(page=1, page_size=2)
+            second_page, second_total = repository.list_plans(page=2, page_size=2)
+            final_page, final_total = repository.list_plans(page=3, page_size=2)
+
+        self.assertEqual([len(first_page), len(second_page), len(final_page)], [2, 2, 1])
+        self.assertEqual([first_total, second_total, final_total], [5, 5, 5])
+        first_ids = {item["plan_id"] for item in first_page}
+        second_ids = {item["plan_id"] for item in second_page}
+        self.assertFalse(first_ids & second_ids)
 
     def test_authentication_failure_is_persisted_with_stable_code(self) -> None:
         """内容账号失效后，状态接口所需错误码必须保留在任务中。"""
@@ -253,6 +282,11 @@ class TripPlanningBoundaryTest(unittest.TestCase):
         self.assertIn("/api/trip/status/{task_id}", paths)
         self.assertIn("/api/trip/history", paths)
         self.assertIn("/api/trip/plan/{plan_id}", paths)
+
+        history_parameters = {
+            item["name"] for item in paths["/api/trip/history"]["get"]["parameters"]
+        }
+        self.assertEqual(history_parameters, {"page", "page_size"})
 
 
 if __name__ == "__main__":

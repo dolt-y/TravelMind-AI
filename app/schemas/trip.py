@@ -190,6 +190,10 @@ class TripHistoryItemResponse(BaseModel):
 
 
 class TripHistoryResponse(BaseModel):
-    """历史行程列表。"""
+    """历史行程分页列表。"""
 
     items: list[TripHistoryItemResponse] = Field(default_factory=list)
+    page: int = Field(..., ge=1)
+    page_size: int = Field(..., ge=1)
+    total: int = Field(..., ge=0)
+    total_pages: int = Field(..., ge=0)

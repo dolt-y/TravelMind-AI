@@ -17,9 +17,11 @@ export async function getTripStatus(taskId: string): Promise<TripTaskResponse> {
   return data
 }
 
-/** 读取最近完成的行程摘要，供“我的行程”列表展示。 */
-export async function getTripHistory(limit = 20): Promise<TripHistoryResponse> {
-  const { data } = await http.get<TripHistoryResponse>('/trip/history', { params: { limit } })
+/** 按页读取已完成的行程摘要，分页总数以服务端持久化数据为准。 */
+export async function getTripHistory(page = 1, pageSize = 6): Promise<TripHistoryResponse> {
+  const { data } = await http.get<TripHistoryResponse>('/trip/history', {
+    params: { page, page_size: pageSize },
+  })
   return data
 }
 

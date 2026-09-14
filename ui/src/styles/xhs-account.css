@@ -16,6 +16,8 @@
 .xhs-login-form { width: 100%; display: grid; gap: 17px; }
 .xhs-phone-row { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; }
 .xhs-code-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.otp-input__caret { width: 1px; height: 18px; background: var(--sea); animation: otp-caret 1s step-end infinite; }
+@keyframes otp-caret { 50% { opacity: 0; } }
 .xhs-login-form > .button { justify-self: start; }
 .form-note { display: flex; align-items: flex-start; gap: 6px; color: var(--muted); font-size: 10px; line-height: 1.55; }
 .form-note svg { margin-top: 1px; color: var(--success); }

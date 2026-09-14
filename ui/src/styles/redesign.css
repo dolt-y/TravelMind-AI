@@ -1,0 +1,248 @@
+/* Inner pages use a compact product layout. Home keeps its original tokens and composition. */
+.app-shell--inner {
+  background: var(--cream);
+}
+
+.app-shell--inner .site-header { height: 66px; background: rgba(247, 249, 250, .94); }
+.app-shell--inner .site-header__inner { width: min(1180px, calc(100% - 56px)); }
+.app-shell--inner .brand { font-size: 17px; }
+.app-shell--inner .brand__mark { width: 34px; height: 34px; }
+.app-shell--inner .main-nav > a { padding: 0 14px; font-size: 12px; }
+.app-shell--inner .page-container { width: min(1120px, calc(100% - 56px)); min-height: 0; padding: 36px 0 48px; }
+.app-shell--inner .page-heading { max-width: none; margin-bottom: 24px; gap: 7px; }
+.app-shell--inner .page-heading--split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 440px); align-items: end; gap: 32px; }
+.app-shell--inner .page-heading--split > div { display: grid; gap: 7px; }
+.app-shell--inner .page-heading--split > p { text-align: right; white-space: nowrap; }
+.app-shell--inner .plan-page .page-heading--split { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 16px; }
+.app-shell--inner .page-heading h1, .app-shell--inner .result-header h1 { font-size: 30px; line-height: 1.2; }
+.app-shell--inner .page-heading p, .app-shell--inner .result-header p { color: var(--muted); font-size: 13px; line-height: 1.55; }
+.app-shell--inner .eyebrow { gap: 6px; font-size: 10px; letter-spacing: .04em; }
+.app-shell--inner .button { min-height: 40px; border-radius: 6px; font-size: 12px; }
+.app-shell--inner .icon-button { width: 38px; height: 38px; border-radius: 6px; }
+.app-shell--inner button:active, .app-shell--inner a.button:active { transform: scale(.98); }
+.app-shell--inner .segmented-control button:focus,
+.app-shell--inner .transport-options button:focus { outline: 0; }
+
+/* Focus changes the surface tone, not the control geometry or border width. */
+.app-shell--inner .field input, .app-shell--inner .field select, .app-shell--inner .field textarea, .app-shell--inner .field__control { border-color: var(--line); font-size: 13px; }
+.app-shell--inner .field__control:focus-within, .app-shell--inner .field input:focus, .app-shell--inner .field select:focus, .app-shell--inner .field textarea:focus { border-color: var(--line); outline: 0; box-shadow: none; background-color: #f5f8f9; }
+
+/* Inspiration follows a visual travel-board pattern instead of a text-heavy list. */
+.app-shell--inner .inspiration-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 210px; gap: 12px; border: 0; background: transparent; }
+.app-shell--inner .inspiration-card { position: relative; min-width: 0; padding: 0; overflow: hidden; color: #fff; border: 0; border-radius: 8px; background: #29485a; text-align: left; }
+.app-shell--inner .inspiration-card:first-child { grid-column: span 2; }
+.app-shell--inner .inspiration-card img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .24s cubic-bezier(.23, 1, .32, 1); }
+.app-shell--inner .inspiration-card:hover img { transform: scale(1.025); }
+.app-shell--inner .inspiration-card__shade { position: absolute; inset: 34% 0 0; background: linear-gradient(transparent, rgba(18, 43, 57, .76)); }
+.app-shell--inner .inspiration-card__copy { position: absolute; right: 18px; bottom: 17px; left: 18px; display: grid; gap: 3px; }
+.app-shell--inner .inspiration-card__copy small { color: rgba(255, 255, 255, .78); font-size: 11px; }
+.app-shell--inner .inspiration-card__copy strong { padding-right: 44px; font-size: 20px; line-height: 1.2; }
+.app-shell--inner .inspiration-card__action { position: absolute; right: 16px; bottom: 15px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .55); border-radius: 50%; background: rgba(24, 52, 74, .24); backdrop-filter: blur(8px); }
+
+/* Planning keeps the form dense while the image panel gives the page a clear focal point. */
+.app-shell--inner .plan-layout { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); align-items: stretch; gap: 16px; }
+.app-shell--inner .form-surface { padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
+.app-shell--inner .planner-form--full { gap: 16px 13px; }
+.app-shell--inner .planner-form--full .planner-form__submit { margin-top: 2px; }
+.app-shell--inner .pipeline-panel { position: relative; min-height: 520px; padding: 0; overflow: hidden; color: #fff; border-radius: 8px; background: #29485a; }
+.app-shell--inner .pipeline-panel > img { position: absolute; width: 100%; height: 100%; display: block; object-fit: cover; }
+.app-shell--inner .pipeline-panel__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 43, 57, .08), rgba(18, 43, 57, .9)); }
+.app-shell--inner .pipeline-panel__content { position: absolute; right: 22px; bottom: 20px; left: 22px; }
+.app-shell--inner .pipeline-panel h2 { margin-bottom: 8px; font-size: 20px; }
+.app-shell--inner .pipeline-panel ol { margin: 0; }
+.app-shell--inner .pipeline-panel li { min-height: 44px; grid-template-columns: 25px minmax(0, 1fr); gap: 8px; border-color: rgba(255, 255, 255, .2); }
+.app-shell--inner .pipeline-panel li > svg { width: 17px; color: #b8d5e1; }
+.app-shell--inner .pipeline-panel li strong { color: #fff; font-size: 11px; }
+
+/* Processing and result views share the same compact type scale. */
+.app-shell--inner .processing-page { width: min(980px, calc(100% - 56px)); min-height: 0; padding: 36px 0 48px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 32px; }
+.app-shell--inner .processing-page__visual { height: 420px; border-radius: 8px; }
+.app-shell--inner .processing-panel { gap: 9px; }
+.app-shell--inner .processing-panel h1 { font-size: 29px; }
+.app-shell--inner .processing-steps { margin-top: 7px; }
+.app-shell--inner .processing-steps li { min-height: 44px; font-size: 12px; }
+.app-shell--inner .result-header { margin-bottom: 24px; }
+.app-shell--inner .result-header > div { gap: 6px; }
+.app-shell--inner .result-page > .result-header .eyebrow,
+.app-shell--inner .result-section .eyebrow { font-size: 12px; }
+.app-shell--inner .result-notices { margin-bottom: 16px; padding: 13px 15px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: 10px; color: #6b512f; border: 1px solid #dbc6a4; border-radius: 6px; background: #fbf4e7; }
+.app-shell--inner .result-notices > svg { margin-top: 1px; }
+.app-shell--inner .result-notices > div { display: grid; gap: 6px; }
+.app-shell--inner .result-notices strong { font-size: 14px; line-height: 1.4; }
+.app-shell--inner .result-notices ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: #7b6547; font-size: 13px; line-height: 1.55; }
+.app-shell--inner .result-visual-grid { margin-top: 0; grid-template-columns: minmax(0, 1.72fr) minmax(290px, .78fr); gap: 14px; }
+.app-shell--inner .result-visual { border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
+.app-shell--inner .result-visual__heading { min-height: 60px; padding: 12px 15px; }
+.app-shell--inner .result-visual__heading h2 { font-size: 17px; }
+.app-shell--inner .trip-map__body, .app-shell--inner .trip-map__canvas { height: 320px; min-height: 320px; }
+.app-shell--inner .budget-chart__canvas, .app-shell--inner .budget-chart__empty { height: 374px; min-height: 374px; }
+.app-shell--inner .result-section { margin-top: 30px; }
+.app-shell--inner .section-heading--compact { margin-bottom: 0; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.app-shell--inner .section-heading--compact h2 { font-size: 22px; }
+.app-shell--inner .section-heading--compact > .result-day-count { width: auto; height: auto; display: block; color: var(--muted); border-radius: 0; background: transparent; font-size: 13px; }
+.app-shell--inner .day-plan-list { border-top: 0; }
+.app-shell--inner .day-plan { padding: 24px 0 30px; }
+.app-shell--inner .day-plan__header { margin-bottom: 12px; align-items: center; }
+.app-shell--inner .day-plan__identity { display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 12px; }
+.app-shell--inner .day-plan__identity > div { display: grid; gap: 3px; }
+.app-shell--inner .day-plan__identity > .day-plan__number { color: var(--sea); font-size: 27px; font-weight: 700; line-height: 1; }
+.app-shell--inner .day-plan__identity > div > span { color: var(--muted); font-size: 13px; font-weight: 750; line-height: 1.3; }
+.app-shell--inner .day-plan__header h3 { font-size: 22px; }
+.app-shell--inner .day-plan__header p { gap: 0; font-size: 13px; line-height: 1.4; }
+.app-shell--inner .day-weather { min-width: 112px; padding-left: 18px; grid-template-columns: 1fr; justify-items: end; gap: 3px; text-align: right; }
+.app-shell--inner .day-weather strong { font-size: 14px; line-height: 1.35; }
+.app-shell--inner .day-weather span { font-size: 12px; line-height: 1.35; }
+.app-shell--inner .day-plan__description { max-width: 920px; margin: 0 0 16px; color: var(--ink-soft); font-size: 14px; line-height: 1.75; }
+.app-shell--inner .transfer-note { margin: 0 0 16px; font-size: 13px; line-height: 1.6; }
+.app-shell--inner .attraction-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.app-shell--inner .attraction-card { height: 100%; border-radius: 8px; box-shadow: 0 6px 18px rgba(28, 57, 76, .05); }
+.app-shell--inner .attraction-card__media { height: 158px; }
+.app-shell--inner .attraction-card__body { height: calc(100% - 158px); padding: 14px; display: grid; grid-template-rows: auto minmax(66px, 1fr) auto auto; align-content: start; gap: 10px; }
+.app-shell--inner .attraction-card h3 { font-size: 17px; }
+.app-shell--inner .attraction-card__body > p { min-height: 0; font-size: 14px; line-height: 1.65; }
+.app-shell--inner .attraction-card .rating { font-size: 13px; }
+.app-shell--inner .attraction-card__meta { min-height: 22px; align-items: center; gap: 0; }
+.app-shell--inner .attraction-card__meta span { font-size: 13px; line-height: 1.4; }
+.app-shell--inner .attraction-card__meta span + span::before { margin: 0 8px; content: '\00b7'; color: var(--muted); }
+.app-shell--inner .attraction-card__address { min-height: 31px; padding-top: 9px; align-items: flex-start; font-size: 13px; line-height: 1.5; }
+.app-shell--inner .day-plan__support { margin-top: 14px; padding-top: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border-top: 1px solid var(--line); }
+.app-shell--inner .day-plan__support > div { min-width: 0; margin: 0; padding: 0 18px; border: 0; }
+.app-shell--inner .day-plan__support > div:first-child { padding-left: 0; }
+.app-shell--inner .day-plan__support > div + div { border-left: 1px solid var(--line); }
+.app-shell--inner .day-plan__support > div:last-child { padding-right: 0; }
+.app-shell--inner .day-plan__support h4 { min-height: 24px; margin: 0 0 7px; padding: 0; display: flex; align-items: center; color: var(--ink); font-size: 14px; line-height: 1.4; }
+.app-shell--inner .day-plan__support p,
+.app-shell--inner .day-plan__support .route-list > div { min-height: 38px; margin: 0; padding: 8px 0; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: start; gap: 10px; color: var(--muted); border-bottom: 1px dashed var(--line); font-size: 14px; line-height: 1.55; }
+.app-shell--inner .day-plan__support .route-list > div { grid-template-columns: 1fr; gap: 3px; }
+.app-shell--inner .day-plan__support .route-list > div span { font-size: 13px; white-space: normal; }
+.app-shell--inner .day-plan__detail-block > p:last-child,
+.app-shell--inner .day-plan__support .route-list > div:last-child { border-bottom: 0; }
+.app-shell--inner .day-plan__detail-block:last-child p { grid-template-columns: 1fr; }
+.app-shell--inner .day-plan__detail-block p strong { color: var(--ink-soft); }
+.app-shell--inner .day-plan__detail-block p span { min-width: 0; }
+.app-shell--inner .day-plan__detail-block .stay-summary { gap: 5px; }
+.app-shell--inner .day-plan__detail-block .stay-summary strong { font-size: 14px; line-height: 1.5; }
+.app-shell--inner .day-plan__detail-block .stay-summary span { font-size: 13px; line-height: 1.55; }
+.app-shell--inner .trip-advice { margin-top: 28px; padding: 18px 0; display: block; }
+.app-shell--inner .trip-advice h2 { font-size: 16px; }
+.app-shell--inner .trip-advice p { max-width: 920px; font-size: 14px; line-height: 1.75; }
+
+/* History and empty states fill the content band without artificial page height. */
+.app-shell--inner .library-page .page-heading { margin-bottom: 18px; }
+.app-shell--inner .library-heading > p { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.app-shell--inner .library-history { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
+.app-shell--inner .library-history.is-loading { opacity: .58; pointer-events: none; }
+.app-shell--inner .library-history__item { min-height: 78px; padding: 12px 15px; grid-template-columns: 34px minmax(0, 1fr) 28px; gap: 13px; }
+.app-shell--inner .library-history__content { gap: 5px; }
+.app-shell--inner .library-history__content > strong { font-size: 16px; }
+.app-shell--inner .library-history__meta { gap: 5px 13px; }
+.app-shell--inner .library-pagination { min-height: 42px; margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.app-shell--inner .library-pagination > span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.app-shell--inner .library-pagination > div { display: flex; align-items: center; gap: 5px; }
+.app-shell--inner .library-pagination .icon-button,
+.app-shell--inner .library-pagination__page { width: 34px; height: 34px; min-width: 34px; padding: 0; display: grid; place-items: center; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 5px; background: var(--paper); font-size: 11px; font-weight: 750; }
+.app-shell--inner .library-pagination button:hover:not(:disabled) { color: var(--forest); border-color: #b7c8cf; background: #f7fafb; }
+.app-shell--inner .library-pagination__page.is-active { color: #fff; border-color: var(--forest); background: var(--forest); }
+.app-shell--inner .library-pagination button:focus { outline: 0; }
+.app-shell--inner .library-pagination-error { min-height: 46px; padding: 7px 9px 7px 13px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.app-shell--inner .library-pagination-error .button { min-height: 32px; padding: 0 11px; }
+.app-shell--inner .library-state { min-height: 170px; border: 1px dashed var(--line); border-radius: 8px; background: var(--paper); }
+.app-shell--inner .library-page--empty { padding-bottom: 48px; }
+.app-shell--inner .library-page--empty .empty-state { position: relative; min-height: 330px; overflow: hidden; color: #fff; border-radius: 8px; background: url('/assets/travel/iceland-aurora.jpg') center 62% / cover no-repeat; }
+.app-shell--inner .library-page--empty .empty-state::before { content: ''; position: absolute; inset: 0; background: rgba(18, 43, 57, .52); }
+.app-shell--inner .library-page--empty .empty-state > * { position: relative; z-index: 1; }
+.app-shell--inner .library-page--empty .empty-state > svg, .app-shell--inner .library-page--empty .empty-state p { color: #fff; }
+.app-shell--inner .library-page--empty .empty-state h1 { font-size: 27px; }
+
+/* Account content stays centered and intentionally narrow for scanability. */
+.app-shell--inner .settings-page .page-heading { width: min(820px, 100%); margin: 0 auto 18px; }
+.app-shell--inner .settings-workspace { width: min(820px, 100%); margin: 0 auto; }
+.app-shell--inner .settings-account { width: 100%; margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
+.app-shell--inner .settings-account__alert { margin: 0 0 18px; }
+.app-shell--inner .xhs-account-heading { margin-bottom: 16px; }
+.app-shell--inner .xhs-account-heading h2 { font-size: 21px; }
+.app-shell--inner .xhs-account-heading p { font-size: 11px; }
+.app-shell--inner .xhs-login-panel { min-height: 250px; margin-top: 12px; padding-top: 16px; }
+.app-shell--inner .qr-placeholder, .app-shell--inner .qr-image { width: 176px; height: 176px; }
+.app-shell--inner .xhs-session-actions { margin-top: 14px; padding-top: 14px; }
+.app-shell--inner .otp-input { width: 100%; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.app-shell--inner .otp-input__slot { position: relative; height: 48px; display: grid; place-items: center; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; background: var(--paper); font-size: 16px; font-weight: 700; }
+.app-shell--inner .otp-input__slot.is-active { background: #eef5f8; box-shadow: none; }
+
+/* Inner pages need a utility footer, not a second navigation page. */
+.site-footer--compact { background: #18384d; }
+.site-footer--compact .site-footer__inner { width: min(1120px, calc(100% - 56px)); padding: 0; }
+.site-footer--compact .site-footer__bottom { min-height: 64px; margin: 0; padding: 0; }
+
+@media (max-width: 900px) {
+  .app-shell--inner .page-heading--split { grid-template-columns: 1fr; gap: 8px; }
+  .app-shell--inner .page-heading--split > p { text-align: left; white-space: normal; }
+  .app-shell--inner .plan-page .page-heading--split { grid-template-columns: 1fr; gap: 8px; }
+  .app-shell--inner .plan-layout { grid-template-columns: 1fr; }
+  .app-shell--inner .pipeline-panel { min-height: 320px; }
+  .app-shell--inner .result-visual-grid { grid-template-columns: 1fr; }
+  .app-shell--inner .attraction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .app-shell--inner .site-header { height: 62px; }
+  .app-shell--inner .site-header__inner { width: calc(100% - 28px); }
+  .app-shell--inner .page-container { width: calc(100% - 32px); padding: 28px 0 38px; }
+  .app-shell--inner .page-heading h1, .app-shell--inner .result-header h1 { font-size: 27px; }
+  .app-shell--inner .inspiration-list { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 190px; }
+  .app-shell--inner .inspiration-card:first-child { grid-column: span 2; }
+  .app-shell--inner .form-surface, .app-shell--inner .settings-account { padding: 17px; }
+  .app-shell--inner .processing-page { width: calc(100% - 32px); padding: 28px 0 38px; }
+  .app-shell--inner .processing-page__visual { height: 240px; }
+  .app-shell--inner .result-header { gap: 14px; margin-bottom: 16px; }
+  .app-shell--inner .result-notices { padding: 12px 13px; }
+  .app-shell--inner .section-heading--compact { align-items: flex-end; flex-direction: row; }
+  .site-footer--compact .site-footer__inner { width: calc(100% - 32px); }
+}
+
+@media (max-width: 520px) {
+  .app-shell--inner .inspiration-list { grid-template-columns: 1fr; grid-auto-rows: 180px; }
+  .app-shell--inner .inspiration-card:first-child { grid-column: auto; }
+  .app-shell--inner .inspiration-card__copy strong { font-size: 18px; }
+  .app-shell--inner .pipeline-panel { min-height: 300px; }
+  .app-shell--inner .result-header .button { width: 100%; }
+  .app-shell--inner .result-visual__heading { min-height: 52px; padding: 10px 12px; }
+  .app-shell--inner .trip-map__body,
+  .app-shell--inner .trip-map__canvas { height: 280px; min-height: 280px; }
+  .app-shell--inner .budget-chart__canvas,
+  .app-shell--inner .budget-chart__empty { height: 280px; min-height: 280px; }
+  .app-shell--inner .result-section { margin-top: 24px; }
+  .app-shell--inner .day-plan { padding: 21px 0 24px; }
+  .app-shell--inner .day-plan__header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+  .app-shell--inner .day-plan__identity { grid-template-columns: 34px minmax(0, 1fr); gap: 9px; }
+  .app-shell--inner .day-plan__identity > .day-plan__number { font-size: 22px; }
+  .app-shell--inner .day-weather { width: auto; min-width: 76px; padding: 0 0 0 12px; border-top: 0; border-left: 1px solid var(--line); }
+  .app-shell--inner .day-plan__description,
+  .app-shell--inner .transfer-note { margin-left: 0; }
+  .app-shell--inner .attraction-grid { grid-template-columns: 1fr; gap: 10px; }
+  .app-shell--inner .attraction-card__media { height: 150px; }
+  .app-shell--inner .day-plan__support { grid-template-columns: 1fr; gap: 0; }
+  .app-shell--inner .day-plan__support > div { padding: 12px 0; }
+  .app-shell--inner .day-plan__support > div:first-child { padding-top: 0; }
+  .app-shell--inner .day-plan__support > div + div { border-top: 1px solid var(--line); border-left: 0; }
+  .app-shell--inner .day-plan__support > div:last-child { padding-bottom: 0; }
+  .app-shell--inner .planner-form--full { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
+  .app-shell--inner .planner-form--full .field--destination,
+  .app-shell--inner .planner-form--full .field--preferences,
+  .app-shell--inner .planner-form--full .field--transport,
+  .app-shell--inner .planner-form--full .planner-form__submit { grid-column: 1 / -1; }
+  .app-shell--inner .transport-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .app-shell--inner .transport-options button { min-height: 38px; padding: 0 6px; justify-content: center; }
+  .app-shell--inner .field input,
+  .app-shell--inner .field select,
+  .app-shell--inner .field__control { height: 44px; }
+  .app-shell--inner .field--date .field__control > svg { display: none; }
+  .app-shell--inner .planner-form--full .planner-form__submit { width: 100%; }
+  .app-shell--inner .library-page--empty .empty-state { min-height: 300px; padding: 24px; }
+  .app-shell--inner .library-pagination { align-items: stretch; flex-direction: column; gap: 8px; }
+  .app-shell--inner .library-pagination > div { justify-content: space-between; }
+  .app-shell--inner .library-pagination .icon-button,
+  .app-shell--inner .library-pagination__page { width: 36px; height: 36px; min-width: 36px; }
+  .app-shell--inner .library-pagination-error { align-items: flex-start; flex-direction: column; }
+  .site-footer--compact .site-footer__bottom { min-height: 76px; }
+}

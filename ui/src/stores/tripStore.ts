@@ -33,7 +33,11 @@ interface TripState {
   plan: TripPlan | null
   history: TripHistoryItem[]
   historyLoading: boolean
-  historyError: boolean
+  historyErrorPage: number | null
+  historyPage: number
+  historyPageSize: number
+  historyTotal: number
+  historyTotalPages: number
   favoritePoiIds: string[]
   planningStage: PlanningStage
   currentStage: string
@@ -45,7 +49,7 @@ interface TripState {
   applyPreset: (city: string, keywords: string) => void
   toggleFavorite: (poiId: string) => void
   clearPlanningError: () => void
-  loadTripHistory: () => Promise<void>
+  loadTripHistory: (page?: number) => Promise<void>
   restoreTripPlan: (planId: string) => Promise<void>
   runPlanning: () => Promise<boolean>
 }
@@ -72,7 +76,11 @@ export const useTripStore = create<TripState>()(
       plan: null,
       history: [],
       historyLoading: true,
-      historyError: false,
+      historyErrorPage: null,
+      historyPage: 1,
+      historyPageSize: 6,
+      historyTotal: 0,
+      historyTotalPages: 0,
       favoritePoiIds: [],
       planningStage: 'idle',
       currentStage: 'idle',
@@ -97,15 +105,21 @@ export const useTripStore = create<TripState>()(
         error: null,
         errorCode: null,
       }),
-      loadTripHistory: () => {
+      loadTripHistory: (page = 1) => {
         if (activeHistoryRequest) return activeHistoryRequest
-        set({ historyLoading: true, historyError: false })
+        set({ historyLoading: true, historyErrorPage: null })
         const request = (async () => {
           try {
-            const response = await getTripHistory()
-            set({ history: response.items })
+            const response = await getTripHistory(page, get().historyPageSize)
+            set({
+              history: response.items,
+              historyPage: response.page,
+              historyPageSize: response.page_size,
+              historyTotal: response.total,
+              historyTotalPages: response.total_pages,
+            })
           } catch {
-            set({ historyError: true })
+            set({ historyErrorPage: page })
           } finally {
             set({ historyLoading: false })
             activeHistoryRequest = null

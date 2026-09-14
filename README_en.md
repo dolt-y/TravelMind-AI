@@ -305,8 +305,11 @@ objects before they reach the planner or frontend.
 | `POST` | `/api/trip/plan` | Submit a complete planning task |
 | `GET` | `/api/trip/status/{task_id}` | Read progress and the final result |
 | `WS` | `/api/trip/ws/{task_id}` | Subscribe to status changes |
-| `GET` | `/api/trip/history` | List completed-plan summaries |
+| `GET` | `/api/trip/history` | List completed-plan summaries by page |
 | `GET` | `/api/trip/plan/{plan_id}` | Restore a complete plan |
+
+The trip-history endpoint accepts `page` (default `1`) and `page_size` (default `8`, maximum `20`)
+query parameters. Its response includes `total` and `total_pages` for client-side pagination.
 
 ### Xiaohongshu content
 

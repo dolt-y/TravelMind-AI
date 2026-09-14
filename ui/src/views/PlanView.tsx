@@ -9,18 +9,25 @@ export function PlanView() {
 
   return (
     <div className="page-container plan-page">
-      <header className="page-heading"><span className="eyebrow"><Sparkles size={15} />{t('plan.eyebrow')}</span><h1>{t('plan.title')}</h1><p>{t('plan.copy')}</p></header>
+      <header className="page-heading page-heading--split">
+        <div><span className="eyebrow"><Sparkles size={15} />{t('plan.eyebrow')}</span><h1>{t('plan.title')}</h1></div>
+        <p>{t('plan.copy')}</p>
+      </header>
       <div className="plan-layout">
         <section className="form-surface"><PlannerForm onSubmit={() => navigate('/plan/running')} /></section>
         <aside className="pipeline-panel">
-          <h2>{t('plan.pipelineTitle')}</h2>
-          <ol>
-            <li><NotebookTabs /><strong>{t('pipeline.search')}</strong></li>
-            <li><MapPinned /><strong>{t('pipeline.poi')}</strong></li>
-            <li><CloudSun /><strong>{t('pipeline.context')}</strong></li>
-            <li><CalendarCheck /><strong>{t('pipeline.itinerary')}</strong></li>
-            <li><Route /><strong>{t('pipeline.routes')}</strong></li>
-          </ol>
+          <img src="/assets/travel/switzerland-lake.jpg" alt="" />
+          <div className="pipeline-panel__shade" aria-hidden="true" />
+          <div className="pipeline-panel__content">
+            <h2>{t('plan.pipelineTitle')}</h2>
+            <ol>
+              <li><NotebookTabs /><strong>{t('pipeline.search')}</strong></li>
+              <li><MapPinned /><strong>{t('pipeline.poi')}</strong></li>
+              <li><CloudSun /><strong>{t('pipeline.context')}</strong></li>
+              <li><CalendarCheck /><strong>{t('pipeline.itinerary')}</strong></li>
+              <li><Route /><strong>{t('pipeline.routes')}</strong></li>
+            </ol>
+          </div>
         </aside>
       </div>
     </div>

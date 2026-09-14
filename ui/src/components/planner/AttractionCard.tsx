@@ -1,4 +1,4 @@
-import { Clock3, Heart, MapPin, Star, TicketCheck } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Attraction } from '../../types'
 
@@ -37,16 +37,15 @@ export function AttractionCard({ attraction, favorite, onToggleFavorite }: Attra
         <div className="attraction-card__heading">
           <h3>{title}</h3>
           {attraction.rating !== null && (
-            <span className="rating"><Star size={14} fill="currentColor" />{attraction.rating}</span>
+            <span className="rating">{attraction.rating}</span>
           )}
         </div>
         <p>{attraction.reason}</p>
         <div className="attraction-card__meta">
-          <span><Clock3 size={14} />{formatDuration(attraction.duration, t('common.hour'), t('common.minute'))}</span>
-          {attraction.reservation_required && <span><TicketCheck size={14} />{t('results.reservation')}</span>}
+          <span>{formatDuration(attraction.duration, t('common.hour'), t('common.minute'))}</span>
+          {attraction.reservation_required && <span>{t('results.reservation')}</span>}
         </div>
         <div className="attraction-card__address">
-          <MapPin size={14} />
           <span>{attraction.address || t('results.addressPending')}</span>
         </div>
       </div>

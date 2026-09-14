@@ -297,8 +297,11 @@ REST schema とドメイン model は分離されています。Provider のレ�
 | `POST` | `/api/trip/plan` | 計画タスクを送信 |
 | `GET` | `/api/trip/status/{task_id}` | 進捗と最終結果を取得 |
 | `WS` | `/api/trip/ws/{task_id}` | 状態変化を購読 |
-| `GET` | `/api/trip/history` | 完了した計画の一覧 |
+| `GET` | `/api/trip/history` | 完了した計画をページ単位で取得 |
 | `GET` | `/api/trip/plan/{plan_id}` | 完全な計画を復元 |
+
+旅行履歴 API はクエリパラメータ `page`（既定値 `1`）と `page_size`（既定値 `8`、最大 `20`）を
+受け取ります。レスポンスにはページ表示用の `total` と `total_pages` も含まれます。
 
 ### 小紅書コンテンツ
 

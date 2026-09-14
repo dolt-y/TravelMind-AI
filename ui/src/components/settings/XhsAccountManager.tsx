@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { ArrowRight, Cookie, LoaderCircle, LogOut, Phone, QrCode, ShieldCheck } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { OTPInput, type SlotProps } from 'input-otp'
+import { Cookie, LoaderCircle, LogOut, Phone, QrCode, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   clearXhsSession,
@@ -20,14 +21,14 @@ const terminalStates = new Set(['success', 'expired', 'error'])
 
 interface XhsAccountManagerProps {
   methods: XHSLoginMethod[]
-  onContinue?: () => void
+  onSuccess: () => void
 }
 
 function taskFromStart(response: XHSLoginStartResponse): XHSLoginStatusResponse {
   return { ...response, qr_url: null, user_nickname: null }
 }
 
-export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProps) {
+export function XhsAccountManager({ methods, onSuccess }: XhsAccountManagerProps) {
   const { t } = useTranslation()
   const defaultMethod = methods.includes('qrcode') ? 'qrcode' : (methods[0] || 'cookie')
   const [method, setMethod] = useState<XHSLoginMethod>(defaultMethod)
@@ -40,6 +41,13 @@ export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProp
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const completedLoginId = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (task?.state !== 'success' || completedLoginId.current === task.login_id) return
+    completedLoginId.current = task.login_id
+    onSuccess()
+  }, [onSuccess, task?.login_id, task?.state])
 
   // 登录状态由后台任务推进，页面只在任务有效期间轮询。
   useEffect(() => {
@@ -99,6 +107,7 @@ export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProp
     setError(null)
     setNotice(null)
     setBusy(false)
+    completedLoginId.current = null
   }
 
   async function clearSession() {
@@ -217,7 +226,19 @@ export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProp
               <label className="field"><span>{t('xhsAccount.login.phoneNumber')}</span><input autoComplete="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, ''))} placeholder="13800000000" /></label>
             </div>
             <div className="xhs-code-row">
-              <label className="field"><span>{t('xhsAccount.login.code')}</span><input autoComplete="one-time-code" inputMode="numeric" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))} placeholder={t('xhsAccount.login.codePlaceholder')} /></label>
+              <label className="field">
+                <span>{t('xhsAccount.login.code')}</span>
+                <OTPInput
+                  maxLength={6}
+                  value={code}
+                  onChange={setCode}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  containerClassName="otp-input"
+                  aria-label={t('xhsAccount.login.code')}
+                  render={({ slots }) => slots.map((slot, index) => <OtpSlot key={index} {...slot} />)}
+                />
+              </label>
               <button className="button button--secondary" type="button" onClick={() => void startPhone()} disabled={busy || !zone.trim() || !phone.trim()}>{t('xhsAccount.login.sendCode')}</button>
             </div>
             <button className="button button--primary" type="button" onClick={() => void verifyPhone()} disabled={busy || !task?.login_id || !code.trim()}>
@@ -241,11 +262,6 @@ export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProp
             <strong>{t(`xhsAccount.states.${task.state}`)}</strong>
             {task.state !== 'success' && <span>{task.message}</span>}
             {task.user_nickname && <span>{t('xhsAccount.login.currentUser', { name: task.user_nickname })}</span>}
-            {task.state === 'success' && onContinue && (
-              <button className="button button--primary login-status__action" type="button" onClick={onContinue}>
-                {t('xhsAccount.login.continuePlanning')}<ArrowRight size={16} />
-              </button>
-            )}
           </div>
         )}
         {notice && <div className="login-status login-status--success" role="status"><strong>{notice}</strong></div>}
@@ -258,5 +274,14 @@ export function XhsAccountManager({ methods, onContinue }: XhsAccountManagerProp
         </button>
       </div>
     </section>
+  )
+}
+
+function OtpSlot({ char, hasFakeCaret, isActive }: SlotProps) {
+  return (
+    <span className={`otp-input__slot${isActive ? ' is-active' : ''}`}>
+      {char}
+      {hasFakeCaret && <span className="otp-input__caret" />}
+    </span>
   )
 }

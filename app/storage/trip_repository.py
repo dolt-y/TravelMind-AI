@@ -284,21 +284,37 @@ class TripRepository:
         except ValueError as exc:
             raise TripRepositoryError("已保存的旅行计划格式无效") from exc
 
-    def list_plans(self, limit: int = 20) -> list[dict[str, Any]]:
-        """按创建时间倒序返回历史行程摘要。"""
+    def list_plans(
+        self,
+        page: int = 1,
+        page_size: int = 8,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """按创建时间倒序返回一页历史行程摘要及总数。"""
+        safe_page = max(1, page)
+        safe_page_size = max(1, min(100, page_size))
+        offset = (safe_page - 1) * safe_page_size
         try:
             with self._connect() as connection:
+                total = connection.execute(
+                    "SELECT COUNT(*) FROM trip_plans"
+                ).fetchone()[0]
                 rows = connection.execute(
                     """
                     SELECT plan_id, cities_json, start_date, end_date,
-                           travelers, plan_json, created_at
-                    FROM trip_plans ORDER BY created_at DESC LIMIT ?
+                           travelers, created_at,
+                           (
+                               SELECT COUNT(*)
+                               FROM trip_days
+                               WHERE trip_days.plan_id = trip_plans.plan_id
+                           ) AS days_count
+                    FROM trip_plans
+                    ORDER BY created_at DESC, plan_id DESC
+                    LIMIT ? OFFSET ?
                     """,
-                    (max(1, min(100, limit)),),
+                    (safe_page_size, offset),
                 ).fetchall()
             items = []
             for row in rows:
-                payload = json.loads(row["plan_json"])
                 items.append(
                     {
                         "plan_id": row["plan_id"],
@@ -306,10 +322,10 @@ class TripRepository:
                         "start_date": row["start_date"],
                         "end_date": row["end_date"],
                         "travelers": row["travelers"],
-                        "days_count": len(payload.get("days") or []),
+                        "days_count": row["days_count"],
                         "created_at": row["created_at"],
                     }
                 )
-            return items
+            return items, total
         except (sqlite3.Error, TypeError, ValueError) as exc:
             raise TripRepositoryError("读取历史旅行计划失败") from exc

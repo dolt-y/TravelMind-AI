@@ -179,6 +179,10 @@ export interface TripHistoryItem {
 
 export interface TripHistoryResponse {
   items: TripHistoryItem[]
+  page: number
+  page_size: number
+  total: number
+  total_pages: number
 }
 
 export type XHSLoginMethod = 'cookie' | 'qrcode' | 'phone'

@@ -26,7 +26,7 @@ export function AppLayout() {
   }, [location.pathname, setMobileMenuOpen])
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isHome ? 'app-shell--home' : 'app-shell--inner'}`}>
       <header className={`site-header${isHome ? ' site-header--home' : ''}`}>
         <div className="site-header__inner">
           <NavLink className="brand" to="/" aria-label={t('nav.home')}>
@@ -50,7 +50,7 @@ export function AppLayout() {
         </div>
       </header>
       <main><Outlet /></main>
-      <SiteFooter />
+      <SiteFooter compact={!isHome} />
     </div>
   )
 }

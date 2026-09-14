@@ -13,14 +13,14 @@ const journeyLinks = [
   { to: '/settings', key: 'nav.settings' },
 ]
 
-export function SiteFooter() {
+export function SiteFooter({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation()
   const year = new Date().getFullYear()
 
   return (
-    <footer className="site-footer">
+    <footer className={`site-footer${compact ? ' site-footer--compact' : ''}`}>
       <div className="site-footer__inner">
-        <div className="site-footer__content">
+        {!compact && <div className="site-footer__content">
           <div className="site-footer__brand">
             <Link className="site-footer__brand-link" to="/" aria-label={t('nav.home')}>
               <span className="site-footer__mark"><Mountain size={21} aria-hidden="true" /></span>
@@ -54,7 +54,7 @@ export function SiteFooter() {
               </ul>
             </section>
           </div>
-        </div>
+        </div>}
 
         <div className="site-footer__bottom">
           <div className="site-footer__legal">

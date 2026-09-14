@@ -54,7 +54,7 @@ export function PlannerForm({ mode = 'full', onSubmit }: PlannerFormProps) {
       )}
       {mode === 'full' && (
         <>
-          <label className="field">
+          <label className="field field--date">
             <span>{t('planner.startDate')}</span>
             <div className="field__control">
               <CalendarDays size={18} aria-hidden="true" />
@@ -66,7 +66,7 @@ export function PlannerForm({ mode = 'full', onSubmit }: PlannerFormProps) {
               />
             </div>
           </label>
-          <label className="field">
+          <label className="field field--date">
             <span>{t('planner.endDate')}</span>
             <div className="field__control">
               <CalendarDays size={18} aria-hidden="true" />

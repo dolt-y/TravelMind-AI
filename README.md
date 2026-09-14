@@ -324,8 +324,11 @@ REST schema 与领域 model 保持分离。供应商原始结构必须先转换�
 | `POST` | `/api/trip/plan` | 提交完整旅行规划任务 |
 | `GET` | `/api/trip/status/{task_id}` | 查询任务进度和最终结果 |
 | `WS` | `/api/trip/ws/{task_id}` | 订阅任务状态变化 |
-| `GET` | `/api/trip/history` | 获取已完成计划摘要 |
+| `GET` | `/api/trip/history` | 分页获取已完成计划摘要 |
 | `GET` | `/api/trip/plan/{plan_id}` | 按计划 ID 恢复完整行程 |
+
+历史行程接口使用查询参数 `page`（默认 `1`）和 `page_size`（默认 `8`，最大 `20`），
+响应同时返回 `total` 与 `total_pages`，供客户端生成分页控件。
 
 ### 小红书内容
 
