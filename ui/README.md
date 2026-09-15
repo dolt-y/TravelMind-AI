@@ -35,7 +35,7 @@ npm run build
 
 图标统一使用 `lucide-react`，不保存图标截图或重复的本地图标资源。
 
-结果页地图使用高德地图 JS SDK，费用构成使用 ECharts。两者都直接消费已生成的行程结果，不会再次发起路线规划。
+结果页使用高德地图显示路线，用 ECharts 显示费用构成。地图和图表使用已生成的行程数据，不会重新计算路线。
 
 ## 代码结构
 
@@ -46,7 +46,7 @@ src/
 ├── layouts/     # 全站导航和页脚布局
 ├── router/      # React Router 路由配置
 ├── services/    # Axios 客户端及后端接口
-├── stores/      # Zustand 全局状态与持久化边界
+├── stores/      # Zustand 页面状态和浏览器数据保存
 ├── styles/      # 基础、布局、页面和响应式样式
 └── views/       # 独立路由页面
 ```

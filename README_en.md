@@ -6,15 +6,17 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=flat-square)](https://react.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-> Build executable multi-day itineraries from real travel content, map facts, and LLM orchestration.
+> Plan multi-day trips using Xiaohongshu travel notes, maps, weather, and hotel information.
 
 [中文](README.md) | [English](README_en.md) | [日本語](README_ja.md)
 
-TravelMind-AI is a full-stack application for personal travel planning. After a traveler submits
-destinations, dates, a budget, and preferences, the system retrieves Xiaohongshu travel notes,
-extracts attraction candidates, enriches them with AMap POI, weather, hotel, and route facts, and
-uses an LLM to compose a day-by-day itinerary. Task progress and complete plans are persisted in
-SQLite, while the Web client provides planning, progress, maps, budgets, and trip history.
+TravelMind-AI is a travel-planning app. Enter your destination, dates, budget, and preferences.
+The app searches Xiaohongshu travel notes, collects place, weather, hotel, and route information
+from AMap, and arranges daily visits, meals, and stays. You can view progress, daily plans, route
+maps, cost estimates, and saved trips.
+
+Core planning features are implemented. Current work focuses on realistic schedules, reliable
+tasks, and checks before public release.
 
 This project is currently intended for learning and technical evaluation. Use it in compliance
 with source-platform rules, local law, and map-provider terms.
@@ -29,7 +31,7 @@ with source-platform rules, local law, and map-provider terms.
 - [Architecture](#architecture)
 - [API](#api)
 - [Configuration](#configuration)
-- [Persistence](#persistence)
+- [Data Storage](#data-storage)
 - [Project Structure](#project-structure)
 - [Development and Testing](#development-and-testing)
 - [Security](#security)
@@ -42,45 +44,45 @@ with source-platform rules, local law, and map-provider terms.
 ## Background
 
 Travel plans generated only from model knowledge may contain nonexistent places, inaccurate
-routes, or stale weather. TravelMind-AI separates inspiration, factual lookup, and planning:
+routes, or stale weather. TravelMind-AI builds plans in the following steps:
 
 - Xiaohongshu supplies real travel notes and experience-based information.
 - AMap supplies places, coordinates, weather, hotels, distances, and route steps.
-- The LLM extracts attractions from notes and composes daily order and descriptions.
+- A large language model (LLM) finds attractions in notes and arranges daily visits and descriptions.
 - Application services validate fields and dates, calculate budgets, cache provider results,
   persist tasks, and expose progress.
 
-Xiaohongshu is currently queried live; this is not a vector database or offline RAG system.
+Xiaohongshu notes are searched when a plan is created, rather than stored in an offline knowledge base.
 Map and weather numbers are never inferred by the LLM.
 
 ## Features
 
 ### Implemented
 
-- A single-city Web planner and REST request models for single-city and multi-city trips.
-- Xiaohongshu note search, detail retrieval, structured attraction extraction, and provenance.
-- AMap POI matching with address, coordinates, rating, and image enrichment.
+- Plan single-city trips in the Web form, or submit multi-city trips through the API.
+- Search and read Xiaohongshu notes, collect attraction details, and keep source references.
+- Match AMap places (POIs, or points of interest) and add addresses, coordinates, ratings, and images.
 - City weather forecasts, hotel search, and SQLite-backed provider caches.
 - Walking, driving, and transit routes with distance, duration, steps, and polyline coordinates.
 - LLM itinerary composition for attraction order, meals, accommodation, and overall advice.
-- Deterministic validation of dates, city ownership, route endpoints, and budget totals.
-- Background planning tasks, polling, WebSocket status updates, and stable failure codes.
-- Persisted complete plans, daily schedules, route segments, history, and plan restoration.
+- Check that dates, cities, route start and end points, and cost totals match the plan.
+- Generate plans in the background, with periodic status checks, WebSocket updates, and error codes.
+- Save complete plans, daily schedules, and routes, with paginated history and plan restoration.
 - Responsive React UI in Chinese, English, and Japanese with AMap and ECharts visualization.
 - Cookie, QR-code, and phone login with an encrypted session isolated per browser.
 - Stable authentication errors and frontend redirection to account settings.
 
-### Boundaries
+### Current Limitations
 
 - Xiaohongshu sessions are stored as encrypted HttpOnly client cookies, not in the server database
   or process-global state.
-- Login endpoints are public and establish an isolated Xiaohongshu session for each browser. A
-  complete end-user identity and authorization system is not included yet.
+- Each browser has its own Xiaohongshu login session, but app user accounts are not implemented.
+  Trip history is not separated by user yet.
 - The Web form currently creates single-city trips. Multi-city planning is available through REST.
 - Missing provider values such as hotel prices and attraction ratings remain empty.
-- Budgets contain currently known estimates and are not guaranteed final expenses.
-- The current runtime is single-node FastAPI with SQLite, without multi-tenant user accounts or a
-  distributed job queue.
+- Cost estimates currently mainly cover stays and meals. Missing ticket and transport prices do
+  not mean those items are free, and the total is not a final bill.
+- The app currently runs on one FastAPI server with SQLite. Tasks cannot be shared across servers yet.
 
 ## Install
 
@@ -243,7 +245,7 @@ flowchart TD
     D --> E["Extract attraction candidates with the LLM"]
     E --> F["Match AMap POIs and coordinates"]
     B --> G["Query weather and hotels"]
-    F --> H["Build verified city facts"]
+    F --> H["Collect each city's attractions, weather, and hotels"]
     G --> H
     H --> I["Compose the daily itinerary with the LLM"]
     I --> J["Calculate routes between adjacent attractions"]
@@ -255,7 +257,8 @@ flowchart TD
 
 The submission endpoint returns immediately. FastAPI runs the planner as a background task. The
 Web client currently polls the status endpoint, while the backend also exposes WebSocket updates.
-Persisted tasks and plans remain queryable after a service restart.
+Saved tasks and plans can still be viewed after a service restart, but unfinished planning tasks
+are not automatically resumed.
 
 ## Architecture
 
@@ -271,7 +274,7 @@ flowchart LR
     ORCH --> WEATHER["Weather service"]
     ORCH --> HOTEL["Hotel service"]
     ORCH --> ROUTE["Route service"]
-    ORCH --> VALIDATE["Deterministic validation"]
+    ORCH --> VALIDATE["Check dates, routes, and costs"]
     XHS --> DB[("SQLite")]
     POI --> DB
     WEATHER --> DB
@@ -287,14 +290,14 @@ Cookie. QR and phone challenges retain only five-minute, non-persistent task sta
 | Layer | Directory | Responsibility |
 | --- | --- | --- |
 | API | `app/routers`, `app/schemas` | HTTP/WebSocket, validation, REST models, errors |
-| Domain | `app/models` | Framework-independent trip, attraction, hotel, weather, and route models |
-| Business | `app/services` | Extraction, factual lookup, planning, validation, task progress |
+| Data structures | `app/models` | Define the fields for trips, attractions, hotels, weather, and routes |
+| App logic | `app/services` | Read notes, query information, plan days, check results, update progress |
 | Integration | `app/integrations` | Xiaohongshu, LLM, and AMap adapters |
 | Storage | `app/storage` | SQLite schemas, caches, complete plans, transactions |
 | Web | `ui/src` | Routing, views, components, Zustand state, Axios requests |
 
-REST schemas and domain models remain separate. Provider responses must be converted into domain
-objects before they reach the planner or frontend.
+API request and response formats are kept separate from internal data structures. Results from
+Xiaohongshu, AMap, and other services are converted into a common format before planning or display.
 
 ## API
 
@@ -321,7 +324,7 @@ query parameters. Its response includes `total` and `total_pages` for client-sid
 | `POST` | `/api/xhs/attractions` | Search notes, extract attractions, and enrich POIs |
 | `GET` | `/api/xhs/attractions/{extraction_id}` | Restore an extraction result |
 
-### Map facts
+### Places, weather, hotels, and routes
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -334,7 +337,7 @@ query parameters. Its response includes `total` and `total_pages` for client-sid
 | `GET` | `/api/hotels/search` | Search hotels by preference, budget, and area |
 | `POST` | `/api/map/route` | Calculate a route between two points |
 
-The route endpoint calculates factual distance, duration, and navigation steps for known
+The route endpoint calculates distance, duration, and navigation steps for known
 endpoints. The itinerary planner decides attraction order.
 
 ### Xiaohongshu client login
@@ -367,7 +370,7 @@ at most 12 tasks at once.
 | `LLM_MODEL_ID` | No | `gpt-4o-mini` | Extraction and planning model |
 | `LLM_TIMEOUT` | No | `180` | Request timeout in seconds |
 | `LLM_ENABLE_THINKING` | No | `false` | Thinking mode for compatible DashScope models |
-| `AMAP_API_KEY` | Yes | none | AMap Web Service key for backend facts |
+| `AMAP_API_KEY` | Yes | none | AMap Web Service key for place, weather, hotel, and route queries |
 | `TRAVELMIND_DATA_DIR` | No | `./data` | SQLite data directory |
 | `WEATHER_CACHE_TTL_SECONDS` | No | `10800` | Weather cache TTL |
 | `HOTEL_CACHE_TTL_SECONDS` | No | `86400` | Hotel cache TTL |
@@ -387,7 +390,7 @@ An AMap Web Service key and Web JS key are different credentials. Frontend varia
 to the browser; configure domain restrictions and a security code in the AMap console, and never
 put a backend service key in a `VITE_*` variable.
 
-## Persistence
+## Data Storage
 
 The default deployment uses one SQLite database:
 
@@ -410,7 +413,7 @@ or its running planning task.
 TravelMind-AI/
 ├── app/
 │   ├── integrations/       # Xiaohongshu, LLM, and AMap adapters
-│   ├── models/             # Domain models
+│   ├── models/             # Trip, attraction, hotel, weather, and route data structures
 │   ├── routers/            # REST and WebSocket routes
 │   ├── schemas/            # Independent API request/response models
 │   ├── services/           # Business services and complete trip planning
@@ -449,7 +452,7 @@ git diff --check
 ```
 
 Automated tests use fake providers and should not depend on real cookies, networks, or paid APIs.
-Run real-provider smoke tests separately and keep secrets out of logs and test output.
+Run full-flow checks with real services separately and keep secrets out of logs and test output.
 
 ## Security
 
@@ -458,8 +461,8 @@ Run real-provider smoke tests separately and keep secrets out of logs and test o
   or `localStorage`.
 - A successful login issues a seven-day encrypted HttpOnly cookie isolated to that browser.
 - Use at least 32 random characters for `TRAVELMIND_SESSION_SECRET`; never reuse another API key.
-- Signing out removes only the current browser session. Stateless sessions cannot be revoked
-  individually on the server; rotate the session secret when every existing session must expire.
+- Signing out clears only the current browser session. The server cannot force one browser to sign
+  out yet; changing the session secret requires every browser to sign in again.
 - API responses, business tables, and logs must not contain cookies, `xsec_token`, Authorization,
   or complete prompts.
 - Public login creation is rate- and capacity-limited, but it is not a complete user identity system.
@@ -468,15 +471,12 @@ Run real-provider smoke tests separately and keep secrets out of logs and test o
 
 ## Roadmap
 
-- Replace in-process background tasks with a persistent, retryable, idempotent job queue.
-- Add user accounts, trip ownership, and multi-tenant isolation.
-- Support multi-city stay editing in the Web planner.
-- Complete lazy photo loading, failure placeholders, and map end-to-end tests.
-- Add itinerary editing, partial route recalculation, and saved plan versions.
-- Add itinerary chat and deletable preference memory after defining consent boundaries.
-- Add structured monitoring, provider rate-limit handling, and production database migrations.
+- Check daily visit and travel time, attraction distances, and hotel areas; clarify cost estimates.
+- Prevent duplicate tasks and support retries, restart recovery, progress after page refresh, and cancellation.
+- Add app user accounts so each user can access only their own trips.
+- Add itinerary editing, history management, multi-city forms, saved favorites, and image failure states.
 
-See [TODO.md](TODO.md) for detailed work items.
+See [TODO.md](TODO.md) for real-service checks, HTTPS, monitoring, backups, and other release work.
 
 ## Related Projects
 
@@ -496,7 +496,7 @@ terms of referenced projects separately.
 Issues and pull requests are welcome. Before submitting a change:
 
 1. Create a focused branch from the latest main branch.
-2. Preserve the REST schema, domain model, and provider-adapter boundaries.
+2. Keep API formats, internal data structures, and external service calls separate.
 3. Add tests for new rules, errors, and persistence behavior.
 4. Run backend tests, frontend linting, and a production build.
 5. Confirm the change contains no `.env`, database, cookie, key, log, or personal data.
