@@ -8,7 +8,7 @@ const allowedReturnPaths = new Set(['/plan', '/plan/running', '/results'])
 const xhsLoginMethods: XHSLoginMethod[] = ['qrcode', 'phone', 'cookie']
 
 function safeReturnPath(value: string | null): string | null {
-  // NOTE: 回跳地址只接受固定业务页面，查询参数不能跳出本站。
+  // 只允许回跳到站内业务页面。
   return value && allowedReturnPaths.has(value) ? value : null
 }
 

@@ -49,7 +49,7 @@ export function XhsAccountManager({ methods, onSuccess }: XhsAccountManagerProps
     onSuccess()
   }, [onSuccess, task?.login_id, task?.state])
 
-  // 登录状态由后台任务推进，页面只在任务有效期间轮询。
+  // 仅在登录任务进行中轮询状态。
   useEffect(() => {
     if (!task?.login_id || terminalStates.has(task.state)) return
 
@@ -69,7 +69,7 @@ export function XhsAccountManager({ methods, onSuccess }: XhsAccountManagerProps
     && (task.state === 'waiting_scan' || task.state === 'waiting_confirm')
   const qrLoginId = qrReady ? task?.login_id : undefined
 
-  // 二维码以临时 Blob 地址展示，任务重置或组件卸载时立即释放。
+  // Blob URL 使用后必须释放。
   useEffect(() => {
     if (!qrLoginId || qrImageUrl) return
     let disposed = false

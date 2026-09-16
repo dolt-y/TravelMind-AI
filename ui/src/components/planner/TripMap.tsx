@@ -68,7 +68,7 @@ export function TripMap({ days }: TripMapProps) {
     let map: MapInstance | null = null
     setStatus('loading')
 
-    // 高德安全密钥必须在地图脚本加载前设置，且只保留在当前浏览器运行环境中。
+    // 高德安全密钥必须先于地图脚本设置。
     if (securityCode) window._AMapSecurityConfig = { securityJsCode: securityCode }
 
     void loadAmap({ key: apiKey, version: '2.0', plugins: [] })
@@ -109,7 +109,7 @@ export function TripMap({ days }: TripMapProps) {
         if (active) setStatus('error')
       })
 
-    // 切换日期或离开结果页时销毁旧地图，避免重复绑定画布和事件。
+    // 日期切换或卸载时销毁旧地图。
     return () => {
       active = false
       map?.destroy()

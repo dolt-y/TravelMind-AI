@@ -1,4 +1,4 @@
-/* Inner pages use a compact product layout. Home keeps its original tokens and composition. */
+/* 非首页使用紧凑布局，首页样式不受影响。 */
 .app-shell--inner {
   background: var(--cream);
 }
@@ -23,11 +23,9 @@
 .app-shell--inner .segmented-control button:focus,
 .app-shell--inner .transport-options button:focus { outline: 0; }
 
-/* Focus changes the surface tone, not the control geometry or border width. */
 .app-shell--inner .field input, .app-shell--inner .field select, .app-shell--inner .field textarea, .app-shell--inner .field__control { border-color: var(--line); font-size: 13px; }
 .app-shell--inner .field__control:focus-within, .app-shell--inner .field input:focus, .app-shell--inner .field select:focus, .app-shell--inner .field textarea:focus { border-color: var(--line); outline: 0; box-shadow: none; background-color: #f5f8f9; }
 
-/* Inspiration follows a visual travel-board pattern instead of a text-heavy list. */
 .app-shell--inner .inspiration-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 210px; gap: 12px; border: 0; background: transparent; }
 .app-shell--inner .inspiration-card { position: relative; min-width: 0; padding: 0; overflow: hidden; color: #fff; border: 0; border-radius: 8px; background: #29485a; text-align: left; }
 .app-shell--inner .inspiration-card:first-child { grid-column: span 2; }
@@ -39,7 +37,6 @@
 .app-shell--inner .inspiration-card__copy strong { padding-right: 44px; font-size: 20px; line-height: 1.2; }
 .app-shell--inner .inspiration-card__action { position: absolute; right: 16px; bottom: 15px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .55); border-radius: 50%; background: rgba(24, 52, 74, .24); backdrop-filter: blur(8px); }
 
-/* Planning keeps the form dense while the image panel gives the page a clear focal point. */
 .app-shell--inner .plan-layout { grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); align-items: stretch; gap: 16px; }
 .app-shell--inner .form-surface { padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
 .app-shell--inner .planner-form--full { gap: 16px 13px; }
@@ -54,7 +51,6 @@
 .app-shell--inner .pipeline-panel li > svg { width: 17px; color: #b8d5e1; }
 .app-shell--inner .pipeline-panel li strong { color: #fff; font-size: 11px; }
 
-/* Processing and result views share the same compact type scale. */
 .app-shell--inner .processing-page { width: min(980px, calc(100% - 56px)); min-height: 0; padding: 36px 0 48px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 32px; }
 .app-shell--inner .processing-page__visual { height: 420px; border-radius: 8px; }
 .app-shell--inner .processing-panel { gap: 9px; }
@@ -127,7 +123,6 @@
 .app-shell--inner .trip-advice h2 { font-size: 16px; }
 .app-shell--inner .trip-advice p { max-width: 920px; font-size: 14px; line-height: 1.75; }
 
-/* History and empty states fill the content band without artificial page height. */
 .app-shell--inner .library-page .page-heading { margin-bottom: 18px; }
 .app-shell--inner .library-heading > p { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
 .app-shell--inner .library-history { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
@@ -154,7 +149,6 @@
 .app-shell--inner .library-page--empty .empty-state > svg, .app-shell--inner .library-page--empty .empty-state p { color: #fff; }
 .app-shell--inner .library-page--empty .empty-state h1 { font-size: 27px; }
 
-/* Account content stays centered and intentionally narrow for scanability. */
 .app-shell--inner .settings-page .page-heading { width: min(820px, 100%); margin: 0 auto 18px; }
 .app-shell--inner .settings-workspace { width: min(820px, 100%); margin: 0 auto; }
 .app-shell--inner .settings-account { width: 100%; margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
@@ -169,7 +163,6 @@
 .app-shell--inner .otp-input__slot { position: relative; height: 48px; display: grid; place-items: center; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; background: var(--paper); font-size: 16px; font-weight: 700; }
 .app-shell--inner .otp-input__slot.is-active { background: #eef5f8; box-shadow: none; }
 
-/* Inner pages need a utility footer, not a second navigation page. */
 .site-footer--compact { background: #18384d; }
 .site-footer--compact .site-footer__inner { width: min(1120px, calc(100% - 56px)); padding: 0; }
 .site-footer--compact .site-footer__bottom { min-height: 64px; margin: 0; padding: 0; }

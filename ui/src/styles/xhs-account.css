@@ -23,7 +23,6 @@
 .form-note svg { margin-top: 1px; color: var(--success); }
 .login-status { width: 100%; padding: 12px 14px; display: grid; gap: 4px; color: var(--ink-soft); border-left: 3px solid var(--sea); background: #edf5f6; font-size: 11px; }
 .login-status strong { font-size: 11px; }
-.login-status__action { justify-self: start; margin-top: 7px; }
 .login-status--success { border-color: var(--success); background: #edf5ef; }
 .login-status--error, .login-status--expired { border-color: var(--danger); background: #fff0ef; }
 .xhs-session-actions { margin-top: 22px; padding-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); }

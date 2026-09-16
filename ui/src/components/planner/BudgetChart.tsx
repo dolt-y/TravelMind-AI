@@ -68,7 +68,6 @@ export function BudgetChart({ budget }: BudgetChartProps) {
       }],
     })
 
-    // 图表跟随结果区域宽度变化，兼容侧栏和移动端布局切换。
     const observer = new ResizeObserver(() => chart.resize())
     observer.observe(chartRef.current)
     return () => {

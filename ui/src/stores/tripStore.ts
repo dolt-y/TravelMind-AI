@@ -129,7 +129,7 @@ export const useTripStore = create<TripState>()(
         return request
       },
       restoreTripPlan: async (planId) => {
-        // 历史列表只包含摘要，进入结果页前必须读取完整计划替换当前浏览器缓存。
+        // 历史列表只有摘要，详情页需重新读取完整行程。
         const savedPlan = await getTripPlan(planId)
         set({ plan: savedPlan })
       },
@@ -170,7 +170,7 @@ export const useTripStore = create<TripState>()(
             })
             set({ taskId: created.task_id })
 
-            // 主流程耗时较长，轮询只读取轻量任务快照，完成后一次接收完整行程。
+            // 轮询状态，完成后接收完整行程。
             for (let attempt = 0; attempt < 1200; attempt += 1) {
               const task = await getTripStatus(created.task_id)
               set({
@@ -212,7 +212,7 @@ export const useTripStore = create<TripState>()(
     }),
     {
       name: 'travelmind-trip-plan',
-      // 只保留用户可继续查看的行程，任务进度、错误和登录凭证不进入本地存储。
+      // 仅持久化表单、当前行程和收藏。
       partialize: (state) => ({
         draft: state.draft,
         plan: state.plan,
