@@ -34,14 +34,14 @@ export function BudgetChart({ budget }: BudgetChartProps) {
     const totalText = formatMoney(budget.total, budget.currency)
 
     chart.setOption({
-      color: ['#345f7a', '#d37a57', '#3d8067', '#c4893f'],
+      color: ['#a8c8bf', '#c9a474', '#758eac', '#9dab82'],
       title: {
         text: totalText,
         subtext: t('tripVisuals.budget.total'),
         left: 'center',
         top: '35%',
-        textStyle: { color: '#18344a', fontSize: 22, fontWeight: 700 },
-        subtextStyle: { color: '#708392', fontSize: 10 },
+        textStyle: { color: '#edf1eb', fontSize: 22, fontWeight: 700 },
+        subtextStyle: { color: '#91a099', fontSize: 10 },
       },
       tooltip: {
         trigger: 'item',
@@ -54,14 +54,14 @@ export function BudgetChart({ budget }: BudgetChartProps) {
         itemWidth: 8,
         itemHeight: 8,
         itemGap: 14,
-        textStyle: { color: '#425c70', fontSize: 10 },
+        textStyle: { color: '#bac4bd', fontSize: 10 },
       },
       series: [{
         type: 'pie',
         radius: ['46%', '68%'],
         center: ['50%', '42%'],
         avoidLabelOverlap: true,
-        itemStyle: { borderColor: '#fff', borderWidth: 3 },
+        itemStyle: { borderColor: '#151c1b', borderWidth: 3 },
         label: { show: false },
         emphasis: { scaleSize: 5 },
         data: entries,

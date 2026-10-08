@@ -38,30 +38,34 @@ export function PlanningView() {
     { icon: Check, label: t('pipeline.finalize'), stages: ['validating_plan', 'completed'] },
   ]
   const activeIndex = Math.max(0, steps.findIndex((item) => item.stages.includes(currentStage)))
+  const displayError = error && !/^(Request failed with status code \d+|Network Error)$/i.test(error)
+    ? error
+    : t('planning.requestFailed')
 
   return (
     <div className="processing-page">
-      <div className="processing-page__visual"><img src="/assets/travel/travelmind-hero.jpg" alt="" /></div>
-      <section className="processing-panel">
-        {stage === 'error' ? <AlertCircle className="processing-panel__icon processing-panel__icon--error" size={32} /> : <LoaderCircle className="processing-panel__icon spin" size={32} />}
-        <span className="eyebrow">{t('planning.eyebrow')}</span>
-        <h1>{stage === 'error' ? t('planning.failed') : t('planning.title', { city: draft.city })}</h1>
-        <p>{error || t('planning.copy')}</p>
-        {stage !== 'error' && (
-          <div className="planning-progress" aria-label={t('planning.progress', { progress })}>
-            <span style={{ width: `${progress}%` }} />
-          </div>
-        )}
-        <ol className="processing-steps">
-          {steps.map((item, index) => {
-            const Icon = item.icon
-            const done = stage === 'complete' || index < activeIndex
-            const active = stage !== 'error' && index === activeIndex
-            return <li className={done ? 'is-done' : active ? 'is-active' : ''} key={item.label}><Icon />{item.label}<StepIcon active={active} done={done} /></li>
-          })}
-        </ol>
-        {stage === 'error' && <Link className="button button--primary" to="/plan">{t('planning.back')}</Link>}
+      <section className={`processing-stage${stage === 'error' ? ' processing-stage--error' : ''}`} aria-live="polite">
+        <img src="/assets/travel/travelmind-hero.jpg" alt="" />
+        <div className="processing-stage__content">
+          <span className="eyebrow">{t('planning.eyebrow')}</span>
+          <h1>{stage === 'error' ? t('planning.failed') : t('planning.title', { city: draft.city })}</h1>
+          <p>{stage === 'error' ? displayError : t('planning.copy')}</p>
+          {stage === 'error' && <Link className="button button--primary" to="/plan">{t('planning.back')}</Link>}
+        </div>
+        <div className="processing-stage__status">
+          {stage === 'error' ? <AlertCircle size={27} aria-hidden="true" /> : <LoaderCircle className="spin" size={27} aria-hidden="true" />}
+          <strong>{stage === 'error' ? '!' : `${progress}%`}</strong>
+        </div>
       </section>
+      {stage !== 'error' && <div className="planning-progress" role="progressbar" aria-label={t('planning.progress', { progress })} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div>}
+      <ol className="processing-steps">
+        {steps.map((item, index) => {
+          const Icon = item.icon
+          const done = stage === 'complete' || index < activeIndex
+          const active = stage !== 'error' && index === activeIndex
+          return <li className={done ? 'is-done' : active ? 'is-active' : ''} key={item.label}><Icon />{item.label}<StepIcon active={active} done={done} /></li>
+        })}
+      </ol>
     </div>
   )
 }

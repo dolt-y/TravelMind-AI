@@ -21,6 +21,10 @@ export function SettingsView() {
     <div className="page-container settings-page">
       <header className="page-heading"><h1>{t('settings.title')}</h1></header>
       <div className="settings-workspace">
+        <aside className="settings-intro">
+          <img src="/assets/travel/kyoto.jpg" alt="" />
+          <div><span className="eyebrow">TRAVELMIND / SOURCES</span><p>{t('footer.sourceXhs')}</p></div>
+        </aside>
         <section className="settings-account" aria-label={t('xhsAccount.account.title')}>
           {returnTo && (
             <div className="inline-alert settings-account__alert" role="status"><RefreshCw size={16} />{t('xhsAccount.authRequired')}</div>

@@ -3,7 +3,6 @@
   .plan-layout { grid-template-columns: 1fr; gap: 42px; }
   .form-surface { padding-right: 0; padding-bottom: 42px; border-right: 0; border-bottom: 1px solid var(--line); }
   .processing-page { grid-template-columns: .85fr 1fr; gap: 34px; }
-  .processing-page__visual { height: 470px; }
   .result-visual-grid { grid-template-columns: 1fr; }
   .budget-chart__canvas, .budget-chart__empty { height: 330px; min-height: 330px; }
   .site-footer__content { grid-template-columns: 1fr; gap: 38px; }
@@ -28,8 +27,6 @@
   .section-heading h2 { font-size: 29px; }
   .inspiration-list img { width: 112px; height: 88px; }
   .processing-page { width: calc(100% - 32px); min-height: calc(100vh - 62px); padding: 42px 0 64px; grid-template-columns: 1fr; }
-  .processing-page__visual { height: 240px; }
-  .processing-panel h1 { font-size: 33px; }
   .result-header { align-items: flex-start; flex-direction: column; }
   .attraction-grid { grid-template-columns: 1fr; }
   .site-footer { padding: 0 16px; }
@@ -53,7 +50,6 @@
   .day-weather { width: 100%; padding: 12px 0 0; border-top: 1px solid var(--line); border-left: 0; }
   .trip-map__body { min-height: 330px; }
   .trip-map__canvas { height: 330px; }
-  .trip-map__tabs button { min-width: 74px; padding-inline: 9px; }
   .library-history__item { min-height: 118px; padding: 16px 0; grid-template-columns: 34px minmax(0, 1fr) 28px; gap: 10px; }
   .library-history__content > strong { font-size: 19px; }
   .library-history__meta { gap: 7px 12px; }

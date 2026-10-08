@@ -1,7 +1,7 @@
-import { ArrowUpRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, RefreshCw, Users } from 'lucide-react'
+import { ArrowUpRight, BookOpen, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Plus, RefreshCw, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { EmptyState } from '../components/common/EmptyState'
 import { useTripStore } from '../stores/tripStore'
 
@@ -56,9 +56,10 @@ export function LibraryView() {
           <span className="eyebrow"><BookOpen size={15} />{t('library.eyebrow')}</span>
           <h1>{t('library.title')}</h1>
         </div>
-        {!!historyTotal && (
-          <p>{historyLoading && <LoaderCircle className="spin" size={14} />}{t('libraryHistory.summary', { total: historyTotal })}</p>
-        )}
+        <div className="library-heading__actions">
+          {!!historyTotal && <p>{historyLoading && <LoaderCircle className="spin" size={14} />}{t('libraryHistory.summary', { total: historyTotal })}</p>}
+          <Link className="button button--secondary" to="/plan"><Plus size={16} />{t('library.start')}</Link>
+        </div>
       </header>
 
       {historyLoading && !history.length && (

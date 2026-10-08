@@ -41,20 +41,8 @@
 .app-shell--inner .form-surface { padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: var(--shadow); }
 .app-shell--inner .planner-form--full { gap: 16px 13px; }
 .app-shell--inner .planner-form--full .planner-form__submit { margin-top: 2px; }
-.app-shell--inner .pipeline-panel { position: relative; min-height: 520px; padding: 0; overflow: hidden; color: #fff; border-radius: 8px; background: #29485a; }
-.app-shell--inner .pipeline-panel > img { position: absolute; width: 100%; height: 100%; display: block; object-fit: cover; }
-.app-shell--inner .pipeline-panel__shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 43, 57, .08), rgba(18, 43, 57, .9)); }
-.app-shell--inner .pipeline-panel__content { position: absolute; right: 22px; bottom: 20px; left: 22px; }
-.app-shell--inner .pipeline-panel h2 { margin-bottom: 8px; font-size: 20px; }
-.app-shell--inner .pipeline-panel ol { margin: 0; }
-.app-shell--inner .pipeline-panel li { min-height: 44px; grid-template-columns: 25px minmax(0, 1fr); gap: 8px; border-color: rgba(255, 255, 255, .2); }
-.app-shell--inner .pipeline-panel li > svg { width: 17px; color: #b8d5e1; }
-.app-shell--inner .pipeline-panel li strong { color: #fff; font-size: 11px; }
 
 .app-shell--inner .processing-page { width: min(980px, calc(100% - 56px)); min-height: 0; padding: 36px 0 48px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 32px; }
-.app-shell--inner .processing-page__visual { height: 420px; border-radius: 8px; }
-.app-shell--inner .processing-panel { gap: 9px; }
-.app-shell--inner .processing-panel h1 { font-size: 29px; }
 .app-shell--inner .processing-steps { margin-top: 7px; }
 .app-shell--inner .processing-steps li { min-height: 44px; font-size: 12px; }
 .app-shell--inner .result-header { margin-bottom: 24px; }
@@ -172,7 +160,6 @@
   .app-shell--inner .page-heading--split > p { text-align: left; white-space: normal; }
   .app-shell--inner .plan-page .page-heading--split { grid-template-columns: 1fr; gap: 8px; }
   .app-shell--inner .plan-layout { grid-template-columns: 1fr; }
-  .app-shell--inner .pipeline-panel { min-height: 320px; }
   .app-shell--inner .result-visual-grid { grid-template-columns: 1fr; }
   .app-shell--inner .attraction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -186,7 +173,6 @@
   .app-shell--inner .inspiration-card:first-child { grid-column: span 2; }
   .app-shell--inner .form-surface, .app-shell--inner .settings-account { padding: 17px; }
   .app-shell--inner .processing-page { width: calc(100% - 32px); padding: 28px 0 38px; }
-  .app-shell--inner .processing-page__visual { height: 240px; }
   .app-shell--inner .result-header { gap: 14px; margin-bottom: 16px; }
   .app-shell--inner .result-notices { padding: 12px 13px; }
   .app-shell--inner .section-heading--compact { align-items: flex-end; flex-direction: row; }
@@ -197,7 +183,6 @@
   .app-shell--inner .inspiration-list { grid-template-columns: 1fr; grid-auto-rows: 180px; }
   .app-shell--inner .inspiration-card:first-child { grid-column: auto; }
   .app-shell--inner .inspiration-card__copy strong { font-size: 18px; }
-  .app-shell--inner .pipeline-panel { min-height: 300px; }
   .app-shell--inner .result-header .button { width: 100%; }
   .app-shell--inner .result-visual__heading { min-height: 52px; padding: 10px 12px; }
   .app-shell--inner .trip-map__body,

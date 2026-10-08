@@ -196,9 +196,9 @@ export function XhsAccountManager({ methods, onSuccess }: XhsAccountManagerProps
       </div>
 
       <div className="segmented-control" aria-label={t('xhsAccount.login.method')}>
-        {methods.includes('qrcode') && <button className={method === 'qrcode' ? 'is-active' : ''} onClick={() => reset('qrcode')} type="button"><QrCode size={17} />{t('xhsAccount.login.qrcode')}</button>}
-        {methods.includes('phone') && <button className={method === 'phone' ? 'is-active' : ''} onClick={() => reset('phone')} type="button"><Phone size={17} />{t('xhsAccount.login.phone')}</button>}
-        {methods.includes('cookie') && <button className={method === 'cookie' ? 'is-active' : ''} onClick={() => reset('cookie')} type="button"><Cookie size={17} />Cookie</button>}
+        {methods.includes('qrcode') && <button className={method === 'qrcode' ? 'is-active' : ''} aria-pressed={method === 'qrcode'} onClick={() => reset('qrcode')} type="button"><QrCode size={17} />{t('xhsAccount.login.qrcode')}</button>}
+        {methods.includes('phone') && <button className={method === 'phone' ? 'is-active' : ''} aria-pressed={method === 'phone'} onClick={() => reset('phone')} type="button"><Phone size={17} />{t('xhsAccount.login.phone')}</button>}
+        {methods.includes('cookie') && <button className={method === 'cookie' ? 'is-active' : ''} aria-pressed={method === 'cookie'} onClick={() => reset('cookie')} type="button"><Cookie size={17} />Cookie</button>}
       </div>
 
       <div className="xhs-login-panel">

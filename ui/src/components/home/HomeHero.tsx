@@ -20,7 +20,9 @@ export function HomeHero() {
       <div className="home-hero__overlay" />
       <div className="home-hero__inner">
         <div className="home-hero__content">
-          <h1>{t('home.title')}</h1>
+          <span className="home-hero__eyebrow">TRAVELMIND / JOURNEY PLANNER</span>
+          <h1>TravelMind</h1>
+          <p>{t('home.title')}</p>
           <PlannerForm mode="hero" onSubmit={() => navigate('/plan')} />
           <div className="home-hot-searches">
             <span><Flame size={14} aria-hidden="true" />{t('home.hotSearch')}</span>
@@ -31,14 +33,6 @@ export function HomeHero() {
             ))}
           </div>
         </div>
-      </div>
-      <div className="home-hero__waves" aria-hidden="true">
-        <svg className="home-hero__wave home-hero__wave--back" viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path d="M0 55C120 20 240 20 360 55C480 90 600 90 720 55C840 20 960 20 1080 55C1200 90 1320 90 1440 55V120H0Z" />
-        </svg>
-        <svg className="home-hero__wave home-hero__wave--front" viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path d="M0 55C120 20 240 20 360 55C480 90 600 90 720 55C840 20 960 20 1080 55C1200 90 1320 90 1440 55V120H0Z" />
-        </svg>
       </div>
     </section>
   )

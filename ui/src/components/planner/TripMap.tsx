@@ -6,6 +6,7 @@ import type { TripDay } from '../../types'
 
 interface TripMapProps {
   days: TripDay[]
+  selectedDayIndex: number
 }
 
 type MapStatus = 'loading' | 'ready' | 'missing-key' | 'empty' | 'error'
@@ -25,18 +26,13 @@ interface AMapSdk {
 
 const ROUTE_COLORS = ['#345f7a', '#d37a57', '#3d8067', '#c4893f']
 
-export function TripMap({ days }: TripMapProps) {
+export function TripMap({ days, selectedDayIndex }: TripMapProps) {
   const { t } = useTranslation()
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0)
   const [status, setStatus] = useState<MapStatus>('loading')
   const containerRef = useRef<HTMLDivElement>(null)
   const selectedDay = days[selectedDayIndex] ?? days[0]
   const apiKey = import.meta.env.VITE_AMAP_JS_KEY?.trim()
   const securityCode = import.meta.env.VITE_AMAP_SECURITY_CODE?.trim()
-
-  useEffect(() => {
-    setSelectedDayIndex((current) => Math.min(current, Math.max(days.length - 1, 0)))
-  }, [days.length])
 
   useEffect(() => {
     const container = containerRef.current
@@ -130,32 +126,15 @@ export function TripMap({ days }: TripMapProps) {
         <MapPinned size={22} aria-hidden="true" />
         <div>
           <h2 id="trip-map-title">{t('tripVisuals.map.title')}</h2>
+          {selectedDay && <span>{t('tripVisuals.map.day', { day: selectedDay.day_index })} / {selectedDay.city} / {selectedDay.date}</span>}
         </div>
       </header>
-      <div className="trip-map__tabs" role="tablist" aria-label={t('tripVisuals.map.days')}>
-        {days.map((day, index) => (
-          <button
-            className={index === selectedDayIndex ? 'is-active' : ''}
-            id={`trip-map-tab-${index}`}
-            key={day.date}
-            type="button"
-            role="tab"
-            aria-controls="trip-route-map"
-            aria-selected={index === selectedDayIndex}
-            onClick={() => setSelectedDayIndex(index)}
-          >
-            <strong>{t('tripVisuals.map.day', { day: day.day_index })}</strong>
-            <span>{day.date.slice(5)}</span>
-          </button>
-        ))}
-      </div>
       <div className="trip-map__body">
         <div
           ref={containerRef}
           id="trip-route-map"
           className="trip-map__canvas"
-          role="tabpanel"
-          aria-labelledby={`trip-map-tab-${selectedDayIndex}`}
+          role="group"
           aria-label={selectedDay ? t('tripVisuals.map.aria', { day: selectedDay.day_index, city: selectedDay.city }) : t('tripVisuals.map.title')}
         />
         {stateContent && (

@@ -5,11 +5,6 @@
 .home-hero__content { width: min(640px, 58%); padding-top: 58px; display: flex; align-items: flex-start; flex-direction: column; }
 .home-hero h1 { max-width: 620px; font-family: Georgia, 'Songti SC', 'STSong', serif; font-size: 54px; font-weight: 700; line-height: 1.18; white-space: pre-line; }
 .home-hero__content > p { margin-top: 12px; color: #29465a; font-size: 17px; line-height: 1.6; }
-.home-hero__waves { position: absolute; z-index: 2; right: 0; bottom: -1px; left: 0; height: 70px; overflow: hidden; pointer-events: none; }
-.home-hero__wave { position: absolute; bottom: 0; left: 0; width: 200%; height: 100%; transform: translate3d(0, 0, 0); }
-.home-hero__wave--back { bottom: -8px; fill: rgba(251, 251, 250, .72); animation: hero-wave-drift 17s linear infinite; }
-.home-hero__wave--front { bottom: -18px; fill: #fbfbfa; animation: hero-wave-drift 12s linear infinite reverse; }
-@keyframes hero-wave-drift { to { transform: translate3d(-50%, 0, 0); } }
 .planner-form--hero { width: min(560px, 100%); margin-top: 20px; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; overflow: hidden; border: 0; border-radius: 7px; background: rgba(255, 255, 255, .96); box-shadow: 0 10px 32px rgba(28, 52, 68, .14); }
 .planner-form--hero:focus-within { box-shadow: 0 10px 32px rgba(28, 52, 68, .2); }
 .planner-form--hero .field > span { display: none; }
@@ -85,7 +80,6 @@
   .home-page { padding-bottom: 48px; }
   .home-hero { height: 620px; min-height: 620px; background-position: 61% 50%; }
   .home-hero__content { padding-bottom: 46px; }
-  .home-hero__waves { height: 48px; }
   .home-hero h1 { max-width: 330px; font-size: 35px; }
   .home-hero__content > p { max-width: 330px; font-size: 13px; }
   .planner-form--hero { width: 100%; }
