@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Literal
+from urllib.parse import quote
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response, WebSocket
 from pydantic import ValidationError
 
 from app.models.trip import TripCityStay, TripPlan, TripPlanningRequest
@@ -17,6 +19,7 @@ from app.schemas.trip import (
     TripPlanResponse,
     TripTaskResponse,
 )
+from app.services.plan_export import PlanExportError, render_plan_pdf
 from app.services.trip_planner_service import TripPlannerService
 from app.storage.trip_repository import TripRepository, TripRepositoryError
 from app.xhs_session import XHSClientSession, require_xhs_session
@@ -163,3 +166,34 @@ def get_trip_plan(plan_id: str) -> TripPlanResponse:
     if plan is None:
         raise HTTPException(status_code=404, detail="旅行计划不存在")
     return _plan_response(plan)
+
+
+@router.get("/plan/{plan_id}/export.pdf")
+def export_trip_plan(
+    plan_id: str,
+    language: Literal["zh", "en", "ja"] = Query(default="zh"),
+    images: bool = Query(default=True, description="是否在 PDF 中内嵌景点首图"),
+) -> Response:
+    """把已保存的完整行程导出为可下载的 PDF 文件。"""
+    try:
+        plan = TripRepository().get_plan(plan_id)
+    except TripRepositoryError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    if plan is None:
+        raise HTTPException(status_code=404, detail="旅行计划不存在")
+
+    try:
+        payload = render_plan_pdf(plan, language, images=images)
+    except PlanExportError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    readable = f"TravelMind-{'-'.join(plan.cities)}-{plan.start_date.isoformat()}.pdf"
+    disposition = (
+        f"attachment; filename=\"itinerary-{plan.plan_id}.pdf\"; "
+        f"filename*=UTF-8''{quote(readable, safe='')}"
+    )
+    return Response(
+        content=payload,
+        media_type="application/pdf",
+        headers={"Content-Disposition": disposition},
+    )

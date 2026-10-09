@@ -83,6 +83,7 @@ TravelMind-AI 通过以下方式整理旅行计划：
 - 检查行程日期、城市、路线起终点和费用合计是否一致。
 - 后台生成行程，支持定时查询进度、WebSocket 进度推送和失败提示。
 - 保存完整行程、每日安排和路线，支持历史分页与重新查看。
+- 在结果页把完整行程导出为 PDF，按中文、英文和日文分别排版。
 - React 响应式前端、中文/英文/日文界面、高德地图和 ECharts 预算图。
 - 小红书 Cookie、二维码和手机号三种登录方式，会话按浏览器加密隔离。
 - 未登录或登录过期时提示原因，并引导进入账户设置页面。
@@ -95,6 +96,9 @@ TravelMind-AI 通过以下方式整理旅行计划：
 - 酒店价格、景点评分等供应商未返回的字段保持为空，不由模型补造。
 - 费用估算目前主要汇总住宿和餐饮；门票、交通等缺失费用不代表免费，也不等于最终消费。
 - 当前使用单机 FastAPI + SQLite，尚未支持多台服务器共同处理任务。
+- PDF 导出优先内嵌系统 TrueType 中文字体；运行环境没有可用字体时退回内置 CID 字体，
+  此时字形由阅读器替换，建议通过 `TRAVELMIND_PDF_FONT` 指定字体文件。
+- 导出时按景点首图下载缩略图，最多 16 张；地址失效、超时或下载失败时该景点只保留文字。
 
 ## 安装
 
@@ -327,7 +331,7 @@ flowchart LR
 
 | 范围 | 技术 |
 | --- | --- |
-| 后端 | Python 3.12、FastAPI、Pydantic、Uvicorn、Loguru |
+| 后端 | Python 3.12、FastAPI、Pydantic、Uvicorn、Loguru、ReportLab、Pillow |
 | LLM | OpenAI Python SDK、OpenAI-compatible Chat Completions |
 | 内容 | Spider_XHS PC 客户端、PyExecJS、Node.js |
 | 地图 | 高德 Web 服务 API、高德地图 JS API |
@@ -346,6 +350,7 @@ flowchart LR
 | `WS` | `/api/trip/ws/{task_id}` | 订阅任务状态变化 |
 | `GET` | `/api/trip/history` | 分页获取已完成计划摘要 |
 | `GET` | `/api/trip/plan/{plan_id}` | 按计划 ID 恢复完整行程 |
+| `GET` | `/api/trip/plan/{plan_id}/export.pdf` | 导出该行程 PDF，`language` 选择排版语言，`images=false` 跳过景点图片 |
 
 历史行程接口使用查询参数 `page`（默认 `1`）和 `page_size`（默认 `8`，最大 `20`），
 响应同时返回 `total` 与 `total_pages`，供客户端生成分页控件。
@@ -409,6 +414,8 @@ Cookie；二维码和手机号登录任务 5 分钟后失效。单个客户端�
 | `WEATHER_CACHE_TTL_SECONDS` | 否 | `10800` | 天气缓存有效期 |
 | `HOTEL_CACHE_TTL_SECONDS` | 否 | `86400` | 酒店缓存有效期 |
 | `ROUTE_CACHE_TTL_SECONDS` | 否 | `86400` | 路线缓存有效期 |
+| `TRAVELMIND_PDF_FONT` | 否 | 自动探测 | 导出 PDF 使用的 TrueType 正文字体路径 |
+| `TRAVELMIND_PDF_FONT_BOLD` | 否 | 自动探测 | 导出 PDF 使用的 TrueType 标题字体路径 |
 
 兼容变量：LLM 还可读取 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`；高德后端还可读取
 `AMAP_MAPS_API_KEY`、`VITE_AMAP_WEB_KEY`。新部署建议使用表格中的主变量。

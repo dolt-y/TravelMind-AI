@@ -28,3 +28,44 @@ export async function getTripPlan(planId: string): Promise<TripPlan> {
   const { data } = await http.get<TripPlan>(`/trip/plan/${planId}`)
   return data
 }
+
+export type ExportLanguage = 'zh' | 'en' | 'ja'
+
+export async function exportTripPlanPdf(planId: string, language: ExportLanguage): Promise<string> {
+  // 后端会下载并内嵌景点图片，给导出单独放宽超时。
+  const response = await http.get<Blob>(`/trip/plan/${planId}/export.pdf`, {
+    params: { language },
+    responseType: 'blob',
+    timeout: 90_000,
+  })
+  const filename = resolveFilename(
+    response.headers['content-disposition'],
+    `TravelMind-${planId}.pdf`,
+  )
+  saveBlob(response.data, filename)
+  return filename
+}
+
+function resolveFilename(disposition: unknown, fallback: string): string {
+  if (typeof disposition !== 'string') return fallback
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+  if (encoded?.[1]) {
+    try {
+      return decodeURIComponent(encoded[1])
+    } catch {
+      return fallback
+    }
+  }
+  return /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? fallback
+}
+
+function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.append(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
